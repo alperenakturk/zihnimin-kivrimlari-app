@@ -36,7 +36,21 @@ py -m http.server 8765
 
 Sonra `http://localhost:8765/?demo` adresini aç. Demo modu `demo/` klasöründen okur ve hiçbir şey kaydetmez.
 
-## Sıradaki sürümler
+## 2. sürüm (Canlı tema)
 
-- 2. sürüm: Obsidian haritası (not bağlantılarından grafik) ve notları okuma.
-- 3. sürüm: grafikler (alışkanlık serisi, kalan kaza, staj sayacı), bildirimler.
+- **Bugün:** selam, günün en önemli işi ve sıradaki sınava kalan gün, takvim şeridi (şu anki etkinlik vurgulu), kategori filtreleri, ilerleme halkası. Görev kartında **Bitti / Yarına / Diğer** (Diğer: Kısmen, başka güne al, İptal, kararı geri al).
+- **Harita:** notların bağlantı haritası (dokununca not açılır), klasör kartları, arama, not okuyucu (bağlantılardan nota geçiş, "bu nota bağlı notlar").
+- **Gidişat:** son 14 günün alışkanlık ısı haritası ve serileri, kalan kaza, haftalık GYM, staj ve uyku ortalaması.
+- Hafif titreşim ve animasyonlar (sistemde "hareketi azalt" açıksa kapanır).
+
+Okunan ek dosyalar (kullanıcının reposunda): `05 Günlük Sistem/Bugün.json` (sabah brifi yazar: günün özeti, takvim, yaklaşanlar) ve `06 Haritalar/harita.json` (notların bağlantı haritası; kasadaki bir betik üretir).
+
+## Güvenlik
+
+- Sayfada katı bir içerik güvenlik politikası (CSP) var: betik ve stil yalnızca bu siteden yüklenir, ağ isteği yalnızca `api.github.com`'a gidebilir. Dış kütüphane, takip kodu ya da analitik yoktur.
+- Notlar ekrana HTML olarak değil, kaçışlanmış metin olarak basılır; not içindeki HTML ya da betik çalışmaz.
+- Ayarlar → "Bu cihazdan anahtarı ve verileri sil" ile telefon tamamen temizlenir.
+
+## Sıradaki
+
+- Bildirimler, haritada yakınlaştırma.

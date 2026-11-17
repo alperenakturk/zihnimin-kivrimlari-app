@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1c1b22">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#f4f6fb">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Zihnimin Kıvrımları</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -14,32 +16,52 @@
 </head>
 <body>
   <header class="ust">
-    <div>
-      <h1>Zihnimin Kıvrımları</h1>
+    <div class="ust-sol">
+      <h1 id="selam">Günaydın</h1>
       <p id="tarih" class="soluk"></p>
     </div>
-    <button id="yenile" class="ikon" title="Kasadan yenile" aria-label="Yenile">↻</button>
+    <div class="ust-sag">
+      <div id="halka" class="halka" role="img" aria-label="Günün ilerlemesi">
+        <svg viewBox="0 0 44 44" aria-hidden="true"><circle class="halka-iz" cx="22" cy="22" r="18"/><circle id="halka-dolu" class="halka-dolu" cx="22" cy="22" r="18"/></svg>
+        <span id="halka-yazi">0/0</span>
+      </div>
+      <button id="ayar-ac" class="ikon" aria-label="Ayarlar">⚙</button>
+    </div>
   </header>
 
   <main>
+    <div id="durum" class="bilgi" hidden></div>
+
     <!-- BUGÜN -->
-    <section id="ekran-bugun" class="ekran aktif">
-      <div id="durum-bugun" class="bilgi"></div>
+    <section id="ekran-bugun" class="ekran aktif" aria-label="Bugün">
+      <article id="ozet" class="ozet" hidden>
+        <p id="ozet-etiket" class="ozet-etiket">Bugünün en önemli işi</p>
+        <p id="ozet-is" class="ozet-is"></p>
+        <p id="ozet-sinav" class="ozet-sinav"></p>
+      </article>
+
+      <section id="takvim-kutu" hidden>
+        <h2>Takvim</h2>
+        <div id="tumgun" class="tumgun"></div>
+        <ol id="takvim" class="takvim"></ol>
+      </section>
+
+      <div id="kategoriler" class="kategoriler" role="tablist" aria-label="Kategoriler"></div>
+
+      <h2>Bugün</h2>
+      <ul id="gorevler" class="liste"></ul>
 
       <h2>Bu haftanın 3 işi</h2>
       <ul id="hafta" class="liste sade"></ul>
 
-      <h2>Bugün <span id="sayac-bugun" class="rozet"></span></h2>
-      <ul id="gorevler" class="liste"></ul>
-
-      <details id="bekleyen-kutu">
+      <details id="bekleyen-kutu" class="acilir">
         <summary>Bekleyenler ve yaklaşanlar <span id="sayac-bekleyen" class="rozet"></span></summary>
         <ul id="bekleyenler" class="liste"></ul>
       </details>
     </section>
 
     <!-- GİRİŞ -->
-    <section id="ekran-giris" class="ekran">
+    <section id="ekran-giris" class="ekran" aria-label="Giriş">
       <h2>Kafamdan geçenler</h2>
       <textarea id="karalama" rows="5" placeholder="Bugün şunu yaptım, şunu düşündüm, yarın şunu yapmalıyım…"></textarea>
 
@@ -47,69 +69,124 @@
       <div class="kutucuklar" id="aliskanliklar"></div>
 
       <h2>Namaz</h2>
-      <p class="soluk kucuk">Kılınan kaza: +/− ile say. Vaktinde kılamadığın vakte dokun (kırmızı olur).</p>
+      <p class="soluk kucuk">Kılınan kazayı +/− ile say. Vaktinde kılamadığın vaktin adına dokun.</p>
       <div id="namaz" class="namaz"></div>
 
       <h2>Diğer</h2>
       <div class="satirlar">
         <label>Staj (saat) <input id="staj" type="number" inputmode="decimal" min="0" max="24" step="0.5" placeholder="0"></label>
-        <label>Dün gece yattım <input id="yatti" type="time"></label>
-        <label>Bu sabah kalktım <input id="kalkti" type="time"></label>
+        <div class="ikili">
+          <label>Dün gece yattım <input id="yatti" type="time"></label>
+          <label>Bu sabah kalktım <input id="kalkti" type="time"></label>
+        </div>
       </div>
     </section>
 
+    <!-- HARİTA -->
+    <section id="ekran-harita" class="ekran" aria-label="Harita">
+      <div id="harita-ana">
+        <input id="ara" type="search" placeholder="Notlarda ara" autocomplete="off" spellcheck="false">
+        <ul id="ara-sonuc" class="liste notlar" hidden></ul>
+        <div class="mini-kutu">
+          <canvas id="mini" class="mini" aria-label="Notların bağlantı haritası"></canvas>
+          <p class="soluk kucuk mini-not">Bir noktaya dokun, not açılsın.</p>
+        </div>
+        <div id="klasorler" class="klasorler"></div>
+      </div>
+      <div id="klasor-gorunum" hidden>
+        <button id="klasor-geri" class="geri">‹ Klasörler</button>
+        <h2 id="klasor-baslik"></h2>
+        <ul id="klasor-notlar" class="liste notlar"></ul>
+      </div>
+      <div id="not-gorunum" hidden>
+        <button id="not-geri" class="geri">‹ Geri</button>
+        <p id="not-yol" class="soluk kucuk"></p>
+        <article id="not-icerik" class="not"></article>
+        <h2>Bu nota bağlı notlar</h2>
+        <ul id="not-baglar" class="liste notlar"></ul>
+      </div>
+    </section>
+
+    <!-- GİDİŞAT -->
+    <section id="ekran-gidisat" class="ekran" aria-label="Gidişat">
+      <h2>Son 14 gün</h2>
+      <div id="isi" class="isi"></div>
+      <div id="seriler" class="kartlar uclu"></div>
+      <h2>Kalan kaza</h2>
+      <div id="kaza-ozet" class="kaza-ozet"></div>
+      <h2>Bu hafta</h2>
+      <div id="hafta-sayac" class="kartlar"></div>
+    </section>
+
     <!-- AYARLAR -->
-    <section id="ekran-ayar" class="ekran">
+    <section id="ekran-ayar" class="ekran" aria-label="Ayarlar">
+      <h2>Sen</h2>
+      <div class="satirlar">
+        <label>Adın (selamda görünür, yalnızca bu cihazda) <input id="ayar-ad" type="text" autocomplete="off" placeholder="Adın"></label>
+      </div>
       <h2>Bağlantı</h2>
-      <p class="soluk kucuk">Uygulama verini doğrudan gizli GitHub reponda okur ve yazar. Anahtar yalnızca bu cihazda saklanır.</p>
+      <p class="soluk kucuk">Uygulama verini doğrudan kendi gizli GitHub reponda okur ve yazar. Anahtar yalnızca bu cihazda saklanır ve sadece api.github.com'a gönderilir.</p>
       <div class="satirlar">
         <label>Repo <input id="ayar-repo" type="text" autocomplete="off" spellcheck="false" placeholder="kullanici/repo"></label>
         <label>Dal <input id="ayar-dal" type="text" autocomplete="off" spellcheck="false" placeholder="main"></label>
         <label>GitHub anahtarı (token) <input id="ayar-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
       </div>
       <button id="ayar-kaydet" class="buyuk">Kaydet ve bağlan</button>
-      <p id="ayar-durum" class="bilgi"></p>
-      <details>
+      <p id="ayar-durum" class="bilgi" hidden></p>
+      <details class="acilir">
         <summary>Anahtar nasıl alınır?</summary>
         <ol class="kucuk">
           <li>github.com → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
           <li>Repository access: <b>Only select repositories</b> → yalnızca kasa reposu.</li>
           <li>Permissions → Repository → <b>Contents: Read and write</b>. Başka izin verme.</li>
-          <li>Süreyi 1 yıl seç, oluştur, buraya yapıştır.</li>
+          <li>Süreyi seç, oluştur, buraya yapıştır.</li>
         </ol>
       </details>
-      <h2>Demo</h2>
-      <p class="soluk kucuk">Anahtarsız denemek için: adrese <code>?demo</code> ekle. Demo modunda hiçbir şey kaydedilmez.</p>
+      <button id="ayar-sil" class="sil">Bu cihazdan anahtarı ve verileri sil</button>
+      <p class="soluk kucuk">Anahtarsız denemek için adrese <code>?demo</code> ekle; demo modunda hiçbir şey kaydedilmez.</p>
     </section>
   </main>
 
-  <div class="kaydet-cubugu">
-    <span id="kayit-durum" class="soluk kucuk"></span>
-    <button id="kaydet" class="buyuk" disabled>Kaydet</button>
+  <div id="kaydet-cubugu" class="kaydet-cubugu" hidden>
+    <span id="kayit-durum" class="kucuk"></span>
+    <button id="kaydet" class="buyuk">Kaydet</button>
   </div>
 
-  <nav class="alt">
-    <button data-ekran="bugun" class="aktif">☀️<span>Bugün</span></button>
-    <button data-ekran="giris">✍️<span>Giriş</span></button>
-    <button data-ekran="ayar">⚙️<span>Ayarlar</span></button>
+  <nav class="alt" aria-label="Ekranlar">
+    <button data-ekran="bugun" class="aktif"><span class="nav-ikon" aria-hidden="true">☀</span><span>Bugün</span></button>
+    <button data-ekran="giris"><span class="nav-ikon" aria-hidden="true">✎</span><span>Giriş</span></button>
+    <button data-ekran="harita"><span class="nav-ikon" aria-hidden="true">◎</span><span>Harita</span></button>
+    <button data-ekran="gidisat"><span class="nav-ikon" aria-hidden="true">▤</span><span>Gidişat</span></button>
   </nav>
+
+  <div id="perde" class="perde" hidden></div>
+  <div id="sayfa" class="sayfa" role="dialog" aria-modal="true" aria-labelledby="sayfa-baslik" hidden>
+    <div class="sayfa-tutamak" aria-hidden="true"></div>
+    <p id="sayfa-baslik" class="sayfa-baslik"></p>
+    <div class="sayfa-dugmeler">
+      <button data-karar="kismen">◐ Kısmen yaptım</button>
+      <label class="gun-sec">📅 Başka güne al <input id="sayfa-gun" type="date"></label>
+      <button data-karar="iptal" class="tehlike">✕ İptal et</button>
+      <button data-karar="geri" id="sayfa-geri">↺ Kararı geri al</button>
+      <button data-karar="kapat" class="soluk-dugme">Vazgeç</button>
+    </div>
+  </div>
 
   <template id="sablon-gorev">
     <li class="gorev">
       <div class="gorev-ust">
-        <span class="oncelik"></span>
+        <span class="nokta" aria-hidden="true"></span>
         <span class="metin"></span>
+        <span class="oncelik" aria-hidden="true"></span>
       </div>
       <div class="gorev-alt">
-        <span class="etiketler soluk kucuk"></span>
-        <span class="karar kucuk"></span>
+        <span class="etiketler"></span>
+        <span class="karar"></span>
       </div>
       <div class="dugmeler">
-        <button data-karar="bitti">✓ Bitti</button>
-        <button data-karar="kismen">◐ Kısmen</button>
+        <button data-karar="bitti" class="d-bitti">✓ Bitti</button>
         <button data-karar="yarin">→ Yarına</button>
-        <button data-karar="gun">📅 Gün</button>
-        <button data-karar="iptal">✕ İptal</button>
+        <button data-karar="diger">⋯ Diğer</button>
       </div>
     </li>
   </template>

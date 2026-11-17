@@ -107,8 +107,84 @@
       </div>
     </section>
 
+    <!-- TAKVİM -->
+    <section id="ekran-takvim" class="ekran" aria-label="Takvim">
+      <div id="gun-seridi" class="gun-seridi" role="tablist" aria-label="Günler"></div>
+      <h2 id="takvim-gun-baslik"></h2>
+      <div id="t-tumgun" class="tumgun"></div>
+      <ol id="t-takvim" class="takvim"></ol>
+      <h2>O günün işleri</h2>
+      <ul id="t-gorevler" class="liste"></ul>
+      <h2>Yaklaşan sınav ve teslimler</h2>
+      <ul id="t-yaklasan" class="liste yaklasan"></ul>
+    </section>
+
+    <!-- DAHA -->
+    <section id="ekran-daha" class="ekran" aria-label="Daha fazla">
+      <div class="menu">
+        <button data-git="gorevler"><span class="menu-ikon m-okul" aria-hidden="true">✓</span><b>Tüm görevler</b><span id="m-gorev" class="soluk kucuk"></span></button>
+        <button data-git="aliskanlik"><span class="menu-ikon m-proje" aria-hidden="true">↻</span><b>Alışkanlıklar</b><span id="m-alis" class="soluk kucuk">aylık görünüm, seriler</span></button>
+        <button data-git="din"><span class="menu-ikon m-geek" aria-hidden="true">☾</span><b>Din takibi</b><span id="m-din" class="soluk kucuk">kalan kaza, okumalar</span></button>
+        <button data-git="uyku"><span class="menu-ikon m-saglik" aria-hidden="true">☁</span><b>Uyku ve GYM</b><span class="soluk kucuk">son 7 gece, haftalık spor</span></button>
+        <button data-git="gidisat"><span class="menu-ikon m-staj" aria-hidden="true">▤</span><b>Gidişat</b><span class="soluk kucuk">genel özet</span></button>
+        <button data-git="rehber"><span class="menu-ikon m-hayat" aria-hidden="true">⌖</span><b>Rehberler</b><span class="soluk kucuk">"X nerede?", okuma listesi</span></button>
+        <button data-git="ayar"><span class="menu-ikon m-diger" aria-hidden="true">⚙</span><b>Ayarlar</b><span class="soluk kucuk">ad, verileri sil</span></button>
+      </div>
+    </section>
+
+    <!-- TÜM GÖREVLER -->
+    <section id="ekran-gorevler" class="ekran alt-ekran" aria-label="Tüm görevler">
+      <button class="geri" data-git="daha">‹ Daha</button>
+      <input id="g-ara" type="search" placeholder="Görevlerde ara" autocomplete="off">
+      <div id="g-filtre" class="kategoriler" role="tablist" aria-label="Filtre"></div>
+      <div id="g-gruplar"></div>
+      <details id="g-arsiv-kutu" class="acilir">
+        <summary>Son bitenler</summary>
+        <ul id="g-arsiv" class="liste sade"></ul>
+      </details>
+    </section>
+
+    <!-- ALIŞKANLIKLAR -->
+    <section id="ekran-aliskanlik" class="ekran alt-ekran" aria-label="Alışkanlıklar">
+      <button class="geri" data-git="daha">‹ Daha</button>
+      <div id="a-secim" class="kategoriler" role="tablist" aria-label="Alışkanlık"></div>
+      <div id="a-ozet" class="kartlar uclu"></div>
+      <h2>Son 5 hafta</h2>
+      <div id="a-takvim" class="ay"></div>
+      <h2>Haftalık skor</h2>
+      <div id="a-hafta" class="cubuklar"></div>
+    </section>
+
+    <!-- DİN -->
+    <section id="ekran-din" class="ekran alt-ekran" aria-label="Din takibi">
+      <button class="geri" data-git="daha">‹ Daha</button>
+      <h2>Kalan kaza</h2>
+      <div id="d-kaza" class="kaza-ozet"></div>
+      <h2>Okumalar</h2>
+      <div id="d-okuma" class="kartlar"></div>
+      <h2>Son kayıtlar</h2>
+      <ul id="d-kayit" class="liste sade"></ul>
+    </section>
+
+    <!-- UYKU VE GYM -->
+    <section id="ekran-uyku" class="ekran alt-ekran" aria-label="Uyku ve GYM">
+      <button class="geri" data-git="daha">‹ Daha</button>
+      <h2>Son 7 gece</h2>
+      <div id="u-geceler" class="geceler"></div>
+      <div id="u-ozet" class="kartlar uclu"></div>
+      <h2>GYM · haftalar</h2>
+      <div id="u-gym" class="cubuklar"></div>
+    </section>
+
+    <!-- REHBER -->
+    <section id="ekran-rehber" class="ekran alt-ekran" aria-label="Rehberler">
+      <button class="geri" data-git="daha">‹ Daha</button>
+      <ul id="r-liste" class="liste notlar"></ul>
+    </section>
+
     <!-- GİDİŞAT -->
-    <section id="ekran-gidisat" class="ekran" aria-label="Gidişat">
+    <section id="ekran-gidisat" class="ekran alt-ekran" aria-label="Gidişat">
+      <button class="geri" data-git="daha">‹ Daha</button>
       <h2>Son 14 gün</h2>
       <div id="isi" class="isi"></div>
       <div id="seriler" class="kartlar uclu"></div>
@@ -119,7 +195,8 @@
     </section>
 
     <!-- AYARLAR -->
-    <section id="ekran-ayar" class="ekran" aria-label="Ayarlar">
+    <section id="ekran-ayar" class="ekran alt-ekran" aria-label="Ayarlar">
+      <button class="geri" data-git="daha">‹ Daha</button>
       <h2>Sen</h2>
       <div class="satirlar">
         <label>Adın (selamda görünür, yalnızca bu cihazda) <input id="ayar-ad" type="text" autocomplete="off" placeholder="Adın"></label>
@@ -137,9 +214,10 @@
 
   <nav class="alt" aria-label="Ekranlar">
     <button data-ekran="bugun" class="aktif"><span class="nav-ikon" aria-hidden="true">☀</span><span>Bugün</span></button>
+    <button data-ekran="takvim"><span class="nav-ikon" aria-hidden="true">▦</span><span>Takvim</span></button>
     <button data-ekran="giris"><span class="nav-ikon" aria-hidden="true">✎</span><span>Giriş</span></button>
     <button data-ekran="harita"><span class="nav-ikon" aria-hidden="true">◎</span><span>Harita</span></button>
-    <button data-ekran="gidisat"><span class="nav-ikon" aria-hidden="true">▤</span><span>Gidişat</span></button>
+    <button data-ekran="daha"><span class="nav-ikon" aria-hidden="true">☰</span><span>Daha</span></button>
   </nav>
 
   <div id="perde" class="perde" hidden></div>

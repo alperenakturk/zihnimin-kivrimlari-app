@@ -263,6 +263,8 @@ function kararVer(t, karar, gun) {
   else if (karar === "gun") g[t.ad] = { karar, gun };
   else g[t.ad] = { karar };
   titret(); degisti(); cizBugun();
+  if (durum.ekran === "takvim") cizTakvimEkrani();
+  if (durum.ekran === "gorevler") cizTumGorevler();
 }
 function sayfaAc(t) {
   durum.sayfaGorev = t;
@@ -554,8 +556,8 @@ function cizIsi(satirlar) {
     seriler.append(k);
   }
 }
-function cizKaza(satirlar) {
-  const kap = $("#kaza-ozet"); kap.replaceChildren();
+function cizKaza(satirlar, hedef = "#kaza-ozet") {
+  const kap = $(hedef); kap.replaceChildren();
   const sayi = (s) => Number(String(s).replace(/[^\d]/g, "")) || 0;
   const toplam = satirlar.find((s) => /toplam/i.test(s.Kalem || ""));
   const vakitler = satirlar.filter((s) => VAKIT.some(([, ad]) => ad === s.Kalem));
@@ -597,6 +599,208 @@ function sayacKart(etiket, deger, oran, alt) {
   k.append(el("p", "k-etiket", etiket), el("p", "k-deger", deger), el("p", "k-alt", alt), c); return k;
 }
 
+/* ---------- TAKVİM (7 gün) ---------- */
+function gununGorevleri(gun) {
+  return durum.gorevler.filter((t) => !t.bekliyor && (t.planli === gun || t.son === gun || (gun === durum.gun && bugunMu(t)))).sort(siralama);
+}
+function cizTakvimEkrani() {
+  if (!durum.secGun || durum.secGun < durum.gun) durum.secGun = durum.gun;
+  const p = durum.plan || {}; const gunler = Array.from({ length: 7 }, (_, i) => gunEkle(durum.gun, i));
+  const yak = (p.yaklasan || []).filter((y) => y.tarih >= durum.gun).sort((a, b) => a.tarih.localeCompare(b.tarih));
+  const serit = $("#gun-seridi"); serit.replaceChildren();
+  for (const g of gunler) {
+    const d = tarihNesne(g); const b = el("button", "gun" + (g === durum.secGun ? " secili" : "")); b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", String(g === durum.secGun));
+    b.append(el("small", "", d.toLocaleDateString("tr-TR", { weekday: "short" })), el("b", "", String(d.getDate())), el("i", yak.some((y) => y.tarih === g) ? "var" : ""));
+    b.addEventListener("click", () => { durum.secGun = g; titret(); cizTakvimEkrani(); });
+    serit.append(b);
+  }
+  const sg = durum.secGun;
+  $("#takvim-gun-baslik").textContent = kisaTarih(sg) === "bugün" || kisaTarih(sg) === "yarın" ? `${kisaTarih(sg)} · ${gunYazi(sg)}` : gunYazi(sg);
+  const gunPlan = ((p.gunler || []).find((x) => x.gun === sg) || (p.gun === sg ? { takvim: p.takvim } : null));
+  const tg = $("#t-tumgun"); tg.replaceChildren(); const ol = $("#t-takvim"); ol.replaceChildren();
+  const etk = (gunPlan && gunPlan.takvim) || [];
+  for (const e of etk) {
+    if (!e.bas) { tg.append(el("span", "", e.baslik)); continue; }
+    const li = el("li"); const saat = el("span", "saat"); saat.append(e.bas, document.createElement("br"), e.bit || "");
+    const s = el("span", "serit"); s.style.background = renk(TUR_RENK[e.tur] || "diger");
+    const ic = el("div"); ic.append(el("div", "baslik", e.baslik)); if (e.yer) ic.append(el("div", "yer", e.yer));
+    li.append(saat, s, ic); ol.append(li);
+  }
+  if (!ol.children.length) { const li = el("li"); li.append(el("span", "saat", ""), el("span"), el("div", "yer", gunPlan ? "Saatli etkinlik yok." : "Bu gün için takvim bilgisi henüz yok.")); ol.append(li); }
+  gorevListesi($("#t-gorevler"), gununGorevleri(sg), "Bu güne planlı iş yok.");
+  const ul = $("#t-yaklasan"); ul.replaceChildren();
+  for (const y of yak.slice(0, 8)) {
+    const f = gunFarki(durum.gun, y.tarih); const li = el("li");
+    li.append(el("span", "kalan" + (f <= 2 ? " yakin" : ""), f === 0 ? "bugün" : f === 1 ? "yarın" : `${f} gün`));
+    const ic = el("div"); ic.append(el("span", "", y.baslik), el("small", "", gunYazi(y.tarih) + (y.tur === "teslim" ? " · teslim" : " · sınav")));
+    li.append(ic); ul.append(li);
+  }
+  if (!ul.children.length) ul.append(el("li", "bos", "Yaklaşan sınav ya da teslim yok."));
+}
+
+/* ---------- DAHA ---------- */
+function cizDaha() {
+  const acik = durum.gorevler.length; const gec = durum.gorevler.filter((t) => (t.planli && t.planli < durum.gun) || (t.son && t.son < durum.gun)).length;
+  $("#m-gorev").textContent = `${acik} açık iş${gec ? ` · ${gec} gecikmiş` : ""}`;
+}
+
+/* ---------- TÜM GÖREVLER ---------- */
+const G_FILTRE = [["hepsi", "Hepsi"], ["gec", "Gecikmiş"], ["bugun", "Bugün"], ["hafta", "7 gün"], ["bekleyen", "Bekleyen"], ["tarihsiz", "Tarihsiz"]];
+async function cizTumGorevler() {
+  durum.gFiltre = durum.gFiltre || "hepsi";
+  const q = ($("#g-ara").value || "").trim().toLocaleLowerCase("tr"); const hafta = gunEkle(durum.gun, 7);
+  const uy = (t) => {
+    const gec = (t.planli && t.planli < durum.gun) || (t.son && t.son < durum.gun);
+    switch (durum.gFiltre) {
+      case "gec": return gec && !t.bekliyor;
+      case "bugun": return !t.bekliyor && bugunMu(t);
+      case "hafta": return !t.bekliyor && ((t.planli && t.planli <= hafta) || (t.son && t.son <= hafta));
+      case "bekleyen": return t.bekliyor;
+      case "tarihsiz": return !t.planli && !t.son && !t.bekliyor;
+      default: return true;
+    }
+  };
+  const liste = durum.gorevler.filter((t) => uy(t) && (!q || (t.ad + " " + t.not).toLocaleLowerCase("tr").includes(q)));
+  const f = $("#g-filtre"); f.replaceChildren();
+  for (const [k, ad] of G_FILTRE) {
+    const n = durum.gorevler.filter((t) => { const o = durum.gFiltre; durum.gFiltre = k; const r = uy(t); durum.gFiltre = o; return r; }).length;
+    const b = el("button", "kat" + (durum.gFiltre === k ? " secili" : ""), `${ad} ${n}`); b.setAttribute("role", "tab");
+    b.addEventListener("click", () => { durum.gFiltre = k; cizTumGorevler(); }); f.append(b);
+  }
+  const kap = $("#g-gruplar"); kap.replaceChildren();
+  const gruplar = new Map(); for (const t of liste) { if (!gruplar.has(t.kat.k)) gruplar.set(t.kat.k, { ad: t.kat.ad, l: [] }); gruplar.get(t.kat.k).l.push(t); }
+  if (!gruplar.size) kap.append(el("p", "bos", "Bu filtrede iş yok."));
+  for (const [k, gr] of gruplar) {
+    const h = el("h2", "grup-baslik"); const n = el("span", "nokta"); n.style.background = renk(k); h.append(n, `${gr.ad} · ${gr.l.length}`);
+    const ul = el("ul", "liste"); gorevListesi(ul, gr.l.sort(siralama), ""); kap.append(h, ul);
+  }
+  if (!durum.arsiv) { const a = await dosyaOku("05 Günlük Sistem/Görevler Arşivi.md"); durum.arsiv = a ? a.metin : ""; }
+  const ar = $("#g-arsiv"); ar.replaceChildren();
+  const bitenler = [...durum.arsiv.matchAll(/^- \[x\] (.*)$/gm)].slice(0, 15);
+  for (const m of bitenler) {
+    const g = m[1]; const ad = g.split(/\s(?:⏫|🔼|🔽|⏳|📅|✅|#[\p{L}\p{N}_-]|—)/u)[0].trim(); const t = (g.match(/✅\s*(\d{4}-\d{2}-\d{2})/) || [])[1];
+    ar.append(el("li", g.includes("iptal") ? "bitti" : "", `${g.includes("iptal") ? "✕" : "✓"}  ${ad}${t ? " · " + kisaTarih(t) : ""}`));
+  }
+  if (!bitenler.length) ar.append(el("li", "bos", "Arşiv boş."));
+}
+$("#g-ara").addEventListener("input", () => cizTumGorevler());
+
+/* ---------- ALIŞKANLIKLAR ---------- */
+const A_SUTUN = ["Diş", "Bakım", "Kaza", "NBA", "Para"];
+async function aliskanlikYukle() {
+  if (!durum.alisSatir) { const a = await dosyaOku(YOL.aliskanlik); durum.alisSatir = a ? tabloSatirlari(a.metin, "Tarih") : []; }
+  durum.aSec = durum.aSec || "Hepsi"; cizAliskanlik();
+}
+function cizAliskanlik() {
+  const harita = new Map(durum.alisSatir.map((s) => [(s.Tarih || "").slice(0, 10), s]));
+  const yapildi = (g, s) => { const v = harita.get(g); if (!v) return null; return s === "Hepsi" ? A_SUTUN.filter((k) => (v[k] || "").includes("✓")).length : (v[s] || "").includes("✓"); };
+  const sec = $("#a-secim"); sec.replaceChildren();
+  for (const s of ["Hepsi", ...A_SUTUN]) { const b = el("button", "kat" + (durum.aSec === s ? " secili" : ""), s); b.addEventListener("click", () => { durum.aSec = s; cizAliskanlik(); }); sec.append(b); }
+  const s = durum.aSec;
+  // son 5 hafta (Pazartesi başlangıçlı)
+  const bugun = tarihNesne(durum.gun); const pzt = gunEkle(durum.gun, -((bugun.getDay() + 6) % 7) - 28);
+  const ay = $("#a-takvim"); ay.replaceChildren();
+  for (const g of ["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pz"]) ay.append(el("span", "", g));
+  let topYap = 0, topGun = 0;
+  for (let i = 0; i < 35; i++) {
+    const g = gunEkle(pzt, i); const d = el("i", "", String(tarihNesne(g).getDate()));
+    if (g > durum.gun) d.className = "bos";
+    else {
+      const y = yapildi(g, s); if (y != null) topGun++;
+      if (s === "Hepsi") { if (y) { d.style.background = `color-mix(in srgb, var(--iyi) ${Math.round((y / 5) * 100)}%, var(--cizgi-acik))`; d.style.color = y >= 3 ? "#fff" : ""; topYap += y / 5; } }
+      else if (y) { d.classList.add("var"); topYap++; }
+      if (g === durum.gun) d.classList.add("bugun");
+      d.title = g;
+    }
+    ay.append(d);
+  }
+  // seri ve oran
+  const seri = (k) => { let n = 0; for (let i = 1; i < 90; i++) { const y = yapildi(gunEkle(durum.gun, -i), k); if (k === "Hepsi" ? y === 5 : y) n++; else break; } return n; };
+  let enUzun = 0, su = 0; for (let i = 60; i >= 1; i--) { const y = yapildi(gunEkle(durum.gun, -i), s); if (s === "Hepsi" ? y === 5 : y) { su++; enUzun = Math.max(enUzun, su); } else su = 0; }
+  const oz = $("#a-ozet"); oz.replaceChildren();
+  const kart = (e, d, a) => { const k = el("div", "kart"); k.append(el("p", "k-etiket", e), el("p", "k-deger kucuk-d", d), el("p", "k-alt", a)); return k; };
+  oz.append(kart("Şu anki seri", `${seri(s)} gün`, s === "Hepsi" ? "5/5 günler" : "dünden geriye"),
+    kart("En uzun seri", `${enUzun} gün`, "son 60 gün"),
+    kart("Oran", topGun ? `%${Math.round((topYap / topGun) * 100)}` : "–", "son 5 hafta"));
+  // haftalık skor
+  const hk = $("#a-hafta"); hk.replaceChildren();
+  for (let w = 4; w >= 0; w--) {
+    const bas = gunEkle(durum.gun, -((bugun.getDay() + 6) % 7) - w * 7); let t = 0, n = 0;
+    for (let i = 0; i < 7; i++) { const g = gunEkle(bas, i); if (g > durum.gun) break; const y = yapildi(g, s); if (y != null) { n++; t += s === "Hepsi" ? y / 5 : y ? 1 : 0; } }
+    const oran = n ? t / n : 0; const c = el("div", "cubuk-s"); const k = el("div", "kolon" + (oran >= 0.85 ? " tam" : ""));
+    requestAnimationFrame(() => (k.style.height = `${Math.max(3, oran * 100)}%`));
+    c.append(k, el("b", "", `%${Math.round(oran * 100)}`), el("small", "", w === 0 ? "bu hafta" : `${tarihNesne(bas).getDate()}.${tarihNesne(bas).getMonth() + 1}`));
+    hk.append(c);
+  }
+}
+
+/* ---------- DİN ---------- */
+async function dinYukle() {
+  const d = await dosyaOku(YOL.din); const md = d ? d.metin : "";
+  const durumT = tabloSatirlari(md, "Kalem"); cizKaza(durumT, "#d-kaza");
+  const ok = $("#d-okuma"); ok.replaceChildren();
+  for (const s of durumT.filter((x) => /cüz|tevhid|okuma/i.test(x.Kalem || ""))) {
+    const kalanSut = Object.keys(s).find((k) => /kalan/i.test(k));
+    const k = el("div", "kart"); k.append(el("p", "k-etiket", s.Kalem.replace(/\s*\(.*\)/, "")), el("p", "k-deger kucuk-d", String(s[kalanSut] || "").split("+")[0].trim()), el("p", "k-alt", "kalan · her Cuma artar"));
+    ok.append(k);
+  }
+  if (!ok.children.length) ok.append(el("p", "bos", "Okuma kaydı yok."));
+  const kayit = tabloSatirlari(md.slice(md.indexOf("## Kayıtlar")), "Tarih").slice(-8).reverse();
+  const ul = $("#d-kayit"); ul.replaceChildren();
+  for (const r of kayit) { const li = el("li"); li.append(el("b", "", kisaTarih(r.Tarih) + " "), el("span", "soluk", r["Kayıt"] || "")); ul.append(li); }
+  if (!kayit.length) ul.append(el("li", "bos", "Kayıt yok."));
+}
+
+/* ---------- UYKU VE GYM ---------- */
+async function uykuYukle() {
+  const u = await dosyaOku(YOL.uyku); const md = u ? u.metin : "";
+  const [uykuMd, gymMd = ""] = md.split(/\n## GYM/);
+  const geceler = tabloSatirlari(uykuMd, "Süre").filter((s) => /^\d+:\d{2}$/.test(s["Süre"])).slice(-7);
+  const dk = (x) => { const [h, m] = x.split(":").map(Number); return h * 60 + m; };
+  const gk = $("#u-geceler"); gk.replaceChildren();
+  for (const s of geceler) {
+    const r = el("div", "gece"); const c = el("div", "cubuk"); const i = el("i"); c.append(i);
+    const v = dk(s["Süre"]); requestAnimationFrame(() => (i.style.width = `${Math.min(100, (v / 600) * 100)}%`));
+    if (v >= 450) i.style.background = "var(--iyi)"; else if (v < 390) i.style.background = "var(--uyari)";
+    r.append(el("span", "soluk", tarihNesne(s.Sabah).toLocaleDateString("tr-TR", { weekday: "short" })), c, el("b", "", s["Süre"]));
+    r.title = `yattı ${s["Yattı"]} · kalktı ${s["Kalktı"]}`; gk.append(r);
+  }
+  if (!geceler.length) gk.append(el("p", "bos", "Uyku kaydı yok."));
+  const ort = geceler.length ? Math.round(geceler.reduce((a, s) => a + dk(s["Süre"]), 0) / geceler.length) : 0;
+  const yatis = geceler.map((s) => { let v = dk(s["Yattı"] || "0:0"); if (v < 12 * 60) v += 24 * 60; return v; });
+  const ortY = yatis.length ? Math.round(yatis.reduce((a, b) => a + b, 0) / yatis.length) % (24 * 60) : null;
+  const sapma = yatis.length ? Math.round(Math.sqrt(yatis.reduce((a, b) => a + (b - yatis.reduce((x, y) => x + y, 0) / yatis.length) ** 2, 0) / yatis.length)) : null;
+  const hm = (v) => `${Math.floor(v / 60)}:${String(v % 60).padStart(2, "0")}`;
+  const oz = $("#u-ozet"); oz.replaceChildren();
+  const kart = (e, d, a) => { const k = el("div", "kart"); k.append(el("p", "k-etiket", e), el("p", "k-deger kucuk-d", d), el("p", "k-alt", a)); return k; };
+  oz.append(kart("Ortalama", geceler.length ? hm(ort) : "?", "saat uyku"), kart("Yatış", ortY == null ? "?" : hm(ortY), "ortalama"), kart("Düzen", sapma == null ? "?" : `±${sapma} dk`, "yatış oynaması"));
+  // GYM: son 5 hafta, hedef 3
+  const gunler = [...gymMd.matchAll(/^\|\s*(\d{4}-\d{2}-\d{2})/gm)].map((m) => m[1]);
+  const bugun = tarihNesne(durum.gun); const hk = $("#u-gym"); hk.replaceChildren();
+  for (let w = 4; w >= 0; w--) {
+    const bas = gunEkle(durum.gun, -((bugun.getDay() + 6) % 7) - w * 7); const son = gunEkle(bas, 6);
+    const n = gunler.filter((g) => g >= bas && g <= son).length;
+    const c = el("div", "cubuk-s"); const k = el("div", "kolon" + (n >= 3 ? " tam" : ""));
+    requestAnimationFrame(() => (k.style.height = `${Math.max(3, Math.min(1, n / 3) * 100)}%`));
+    c.append(k, el("b", "", `${n}/3`), el("small", "", w === 0 ? "bu hafta" : `${tarihNesne(bas).getDate()}.${tarihNesne(bas).getMonth() + 1}`));
+    hk.append(c);
+  }
+}
+
+/* ---------- REHBERLER ---------- */
+async function rehberYukle() {
+  await haritaYukle(); const ul = $("#r-liste"); ul.replaceChildren();
+  if (!durum.harita) return;
+  const rehber = durum.harita.dugumler.filter((d) => d.klasor === "06 Haritalar" || d.ad.toLocaleLowerCase("tr").includes("okuma ve izleme"));
+  for (const d of rehber) {
+    const li = notDugmesi(d);
+    li.querySelector("button").addEventListener("click", () => ekranAc("harita"), { capture: true });
+    ul.append(li);
+  }
+  if (!rehber.length) ul.append(el("li", "bos", "Rehber notu yok."));
+}
+
 /* ---------- yükleme ve gezinme ---------- */
 function bilgi(m, tur) { const b = $("#durum"); b.hidden = !m; b.textContent = m || ""; b.className = "bilgi" + (tur ? " " + tur : ""); }
 function taslakAl(gun) { try { const t = JSON.parse(localStorage.getItem("zk-taslak") || "null"); return t && t.gun === gun ? t : null; } catch { return null; } }
@@ -616,15 +820,25 @@ async function yukle() {
   cizBugun(); cizGiris(); kaydetDurum();
   if (durum.ekran === "harita") haritaYukle(); if (durum.ekran === "gidisat") gidisatYukle();
 }
+const ALT_EKRAN = ["gorevler", "aliskanlik", "din", "uyku", "rehber", "gidisat", "ayar"];
 function ekranAc(ad) {
   durum.ekran = ad;
+  const sekme = ALT_EKRAN.includes(ad) ? "daha" : ad;
   for (const s of document.querySelectorAll(".ekran")) s.classList.toggle("aktif", s.id === "ekran-" + ad);
-  for (const b of document.querySelectorAll(".alt button")) { const ak = b.dataset.ekran === ad; b.classList.toggle("aktif", ak); b.setAttribute("aria-current", ak ? "page" : "false"); }
+  for (const b of document.querySelectorAll(".alt button")) { const ak = b.dataset.ekran === sekme; b.classList.toggle("aktif", ak); b.setAttribute("aria-current", ak ? "page" : "false"); }
   if (ad === "harita") { haritaYukle().then(() => requestAnimationFrame(miniCiz)); }
   if (ad === "gidisat") gidisatYukle();
+  if (ad === "takvim") cizTakvimEkrani();
+  if (ad === "daha") cizDaha();
+  if (ad === "gorevler") cizTumGorevler();
+  if (ad === "aliskanlik") aliskanlikYukle();
+  if (ad === "din") dinYukle();
+  if (ad === "uyku") uykuYukle();
+  if (ad === "rehber") rehberYukle();
   kaydetDurum(); window.scrollTo({ top: 0 });
 }
 for (const b of document.querySelectorAll(".alt button")) b.addEventListener("click", () => { if (b.dataset.ekran === "harita" && durum.ekran === "harita") haritaGorunum("ana"); ekranAc(b.dataset.ekran); });
+for (const b of document.querySelectorAll("[data-git]")) b.addEventListener("click", () => ekranAc(b.dataset.git));
 $("#ayar-ac").addEventListener("click", () => ekranAc(durum.ekran === "ayar" ? "bugun" : "ayar"));
 
 (function ayarEkrani() {

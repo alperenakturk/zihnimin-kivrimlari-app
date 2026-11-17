@@ -287,6 +287,80 @@ textarea { resize: vertical; min-height: 120px; }
 .gece b { text-align: right; font-variant-numeric: tabular-nums; }
 .kart .k-deger.kucuk-d { font-size: 1.05rem; }
 
+/* yeni iş */
+.baslik-satir { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ekle { border: 0; background: var(--vurgu-acik); color: var(--vurgu-koyu); font-weight: 600; font-size: .85rem; border-radius: 99px; padding: 6px 12px; margin-top: 14px; }
+#yeni { max-height: 92vh; overflow-y: auto; }
+.yeni-etiket { margin: 12px 0 2px; }
+.kategoriler.sarili { flex-wrap: wrap; padding-top: 4px; }
+.kat .kat-nokta { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.parcali { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+.parcali button { border: 1px solid var(--cizgi); background: transparent; border-radius: 10px; padding: 9px 0; font-size: .9rem; }
+.parcali button.secili { background: var(--yazi); color: #fff; border-color: var(--yazi); }
+#yeni .ikili { margin-top: 12px; }
+.vazgec { border: 1px solid var(--cizgi) !important; border-radius: 12px; background: transparent; margin-top: 12px; }
+.hata { color: var(--uyari); font-size: .85rem; margin: 8px 0 0; }
+.rozet-yeni { font-size: .7rem; font-weight: 700; color: var(--k-proje); background: var(--k-proje-a); border-radius: 99px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px; }
+
+/* giriş özeti */
+.giris-ozet { background: var(--kart); border-radius: var(--r); box-shadow: var(--golge); padding: 12px 14px; margin-top: 12px; display: flex; align-items: center; gap: 12px; }
+.giris-ozet .cubuk { flex: 1; margin: 0; }
+.giris-ozet b { font-variant-numeric: tabular-nums; }
+.giris-ozet small { display: block; color: var(--soluk); font-size: .78rem; }
+
+/* harita yakınlaştırma */
+.mini { touch-action: none; cursor: grab; }
+.mini-arac { display: flex; justify-content: space-between; align-items: center; padding: 0 12px 10px; }
+.mini-arac button { border: 1px solid var(--cizgi); background: var(--zemin); border-radius: 10px; width: 36px; height: 32px; font-size: 1rem; }
+.mini-arac div { display: flex; gap: 6px; }
+
+/* iki sütunlu ekranlar: telefonda tek sütun ve istenen sırada */
+.iki-sutun.aktif { display: flex; flex-direction: column; }
+.iki-sutun > .sutun { display: contents; }
+#ozet { order: 1; } #takvim-kutu { order: 2; } #kategoriler { order: 3; } .b-baslik { order: 4; } #gorevler { order: 5; } .hafta-blok { order: 6; } #bekleyen-kutu { order: 7; }
+#giris-ozet { order: 0; } .g-karalama { order: 1; } .g-aliskanlik { order: 2; } .g-namaz { order: 3; } .g-diger { order: 4; }
+
+/* ---------- BİLGİSAYAR (geniş ekran) ---------- */
+@media (min-width: 900px) {
+  body { padding-left: 232px; padding-bottom: 110px; }
+  .ust, main { max-width: 1120px; padding-left: 32px; padding-right: 32px; }
+  .ust { padding-top: 28px; }
+  h1 { font-size: 1.6rem; }
+  .alt {
+    top: 0; bottom: 0; right: auto; width: 232px; flex-direction: column; justify-content: flex-start; gap: 4px;
+    border-top: 0; border-right: 1px solid var(--cizgi-acik); padding: 92px 14px 20px; background: var(--kart);
+  }
+  .alt::before { content: "Zihnimin Kıvrımları"; position: absolute; top: 30px; left: 22px; font-weight: 700; font-size: 1rem; color: var(--yazi); }
+  .alt button { flex: none; max-width: none; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 11px 14px; }
+  .alt .nav-ikon { width: 22px; text-align: center; }
+  .alt button span:last-child { font-size: .95rem; }
+  .alt button:hover:not(.aktif) { background: var(--zemin); color: var(--yazi); }
+  .iki-sutun.aktif { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 0 32px; align-items: start; }
+  .iki-sutun > .sutun { display: block; }
+  .iki-sutun .tam-genislik { grid-column: 1 / -1; }
+  #ekran-bugun .sutun.sol { position: sticky; top: 16px; }
+  .kaydet-cubugu { left: 232px; bottom: 0; max-width: 1120px; padding: 14px 32px 20px; }
+  .klasorler { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .kartlar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .kartlar.uclu { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .menu { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kutucuklar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mini { height: 440px; }
+  #harita-ana { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 0 24px; align-items: start; }
+  #harita-ana #ara, #harita-ana #ara-sonuc { grid-column: 1 / -1; }
+  #harita-ana .klasorler { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
+  #not-gorunum, #klasor-gorunum, .alt-ekran { max-width: 860px; }
+  .not { padding: 8px 28px 20px; }
+  .perde { backdrop-filter: blur(2px); }
+  .sayfa { left: 50%; right: auto; top: 50%; bottom: auto; width: min(500px, 92vw); transform: translate(-50%, -50%); border-radius: 20px; padding: 18px 22px 22px; animation: belir .15s ease-out; }
+  .sayfa-tutamak { display: none; }
+  .gorev:hover, .klasor:hover, .menu button:hover, .notlar li button:hover { box-shadow: 0 2px 4px rgba(27, 34, 48, .06), 0 8px 22px rgba(27, 34, 48, .08); }
+  .dugmeler button:hover { border-color: var(--vurgu); color: var(--vurgu); }
+  .dugmeler button.secili:hover { color: #fff; }
+  .gun-seridi { gap: 8px; }
+  .gun:hover:not(.secili) { background: var(--vurgu-acik); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

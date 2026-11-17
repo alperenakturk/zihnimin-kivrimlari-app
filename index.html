@@ -33,7 +33,8 @@
     <div id="durum" class="bilgi" hidden></div>
 
     <!-- BUGÜN -->
-    <section id="ekran-bugun" class="ekran aktif" aria-label="Bugün">
+    <section id="ekran-bugun" class="ekran aktif iki-sutun" aria-label="Bugün">
+     <div class="sutun sol">
       <article id="ozet" class="ozet" hidden>
         <p id="ozet-etiket" class="ozet-etiket">Bugünün en önemli işi</p>
         <p id="ozet-is" class="ozet-is"></p>
@@ -46,32 +47,33 @@
         <ol id="takvim" class="takvim"></ol>
       </section>
 
+      <div class="hafta-blok">
+        <h2>Bu haftanın 3 işi</h2>
+        <ul id="hafta" class="liste sade"></ul>
+      </div>
+     </div>
+     <div class="sutun sag">
       <div id="kategoriler" class="kategoriler" role="tablist" aria-label="Kategoriler"></div>
 
-      <h2>Bugün</h2>
+      <div class="baslik-satir b-baslik"><h2>Bugün</h2><button class="ekle" data-yeni="bugun">＋ Yeni iş</button></div>
       <ul id="gorevler" class="liste"></ul>
-
-      <h2>Bu haftanın 3 işi</h2>
-      <ul id="hafta" class="liste sade"></ul>
 
       <details id="bekleyen-kutu" class="acilir">
         <summary>Bekleyenler ve yaklaşanlar <span id="sayac-bekleyen" class="rozet"></span></summary>
         <ul id="bekleyenler" class="liste"></ul>
       </details>
+     </div>
     </section>
 
     <!-- GİRİŞ -->
-    <section id="ekran-giris" class="ekran" aria-label="Giriş">
+    <section id="ekran-giris" class="ekran iki-sutun" aria-label="Giriş">
+     <div id="giris-ozet" class="giris-ozet tam-genislik" aria-live="polite"></div>
+     <div class="sutun sol">
+      <div class="g-karalama">
       <h2>Kafamdan geçenler</h2>
       <textarea id="karalama" rows="5" placeholder="Bugün şunu yaptım, şunu düşündüm, yarın şunu yapmalıyım…"></textarea>
-
-      <h2>Günlük işler</h2>
-      <div class="kutucuklar" id="aliskanliklar"></div>
-
-      <h2>Namaz</h2>
-      <p class="soluk kucuk">Kılınan kazayı +/− ile say. Vaktinde kılamadığın vaktin adına dokun.</p>
-      <div id="namaz" class="namaz"></div>
-
+      </div>
+      <div class="g-diger">
       <h2>Diğer</h2>
       <div class="satirlar">
         <label>Staj (saat) <input id="staj" type="number" inputmode="decimal" min="0" max="24" step="0.5" placeholder="0"></label>
@@ -80,6 +82,19 @@
           <label>Bu sabah kalktım <input id="kalkti" type="time"></label>
         </div>
       </div>
+      </div>
+     </div>
+     <div class="sutun sag">
+      <div class="g-aliskanlik">
+      <h2>Günlük işler</h2>
+      <div class="kutucuklar" id="aliskanliklar"></div>
+      </div>
+      <div class="g-namaz">
+      <h2>Namaz</h2>
+      <p class="soluk kucuk">Kılınan kazayı +/− ile say. Vaktinde kılamadığın vaktin adına dokun.</p>
+      <div id="namaz" class="namaz"></div>
+      </div>
+     </div>
     </section>
 
     <!-- HARİTA -->
@@ -89,7 +104,14 @@
         <ul id="ara-sonuc" class="liste notlar" hidden></ul>
         <div class="mini-kutu">
           <canvas id="mini" class="mini" aria-label="Notların bağlantı haritası"></canvas>
-          <p class="soluk kucuk mini-not">Bir noktaya dokun, not açılsın.</p>
+          <div class="mini-arac">
+            <span class="soluk kucuk">Dokun: not aç · iki parmak: büyüt</span>
+            <div>
+              <button type="button" id="mini-kucult" aria-label="Uzaklaştır">−</button>
+              <button type="button" id="mini-sifirla" aria-label="Haritayı ortala">⟲</button>
+              <button type="button" id="mini-buyut" aria-label="Yakınlaştır">+</button>
+            </div>
+          </div>
         </div>
         <div id="klasorler" class="klasorler"></div>
       </div>
@@ -108,15 +130,19 @@
     </section>
 
     <!-- TAKVİM -->
-    <section id="ekran-takvim" class="ekran" aria-label="Takvim">
+    <section id="ekran-takvim" class="ekran iki-sutun" aria-label="Takvim">
+     <div class="sutun sol">
       <div id="gun-seridi" class="gun-seridi" role="tablist" aria-label="Günler"></div>
       <h2 id="takvim-gun-baslik"></h2>
       <div id="t-tumgun" class="tumgun"></div>
       <ol id="t-takvim" class="takvim"></ol>
-      <h2>O günün işleri</h2>
+     </div>
+     <div class="sutun sag">
+      <div class="baslik-satir"><h2>O günün işleri</h2><button class="ekle" data-yeni="takvim">＋ Yeni iş</button></div>
       <ul id="t-gorevler" class="liste"></ul>
       <h2>Yaklaşan sınav ve teslimler</h2>
       <ul id="t-yaklasan" class="liste yaklasan"></ul>
+     </div>
     </section>
 
     <!-- DAHA -->
@@ -229,9 +255,35 @@
       <label class="gun-sec">📅 Başka güne al <input id="sayfa-gun" type="date"></label>
       <button data-karar="iptal" class="tehlike">✕ İptal et</button>
       <button data-karar="geri" id="sayfa-geri">↺ Kararı geri al</button>
+      <button data-karar="sil" id="sayfa-sil" class="tehlike">🗑 Bu yeni işi sil</button>
       <button data-karar="kapat" class="soluk-dugme">Vazgeç</button>
     </div>
   </div>
+
+  <form id="yeni" class="sayfa" role="dialog" aria-modal="true" aria-labelledby="yeni-baslik" hidden>
+    <div class="sayfa-tutamak" aria-hidden="true"></div>
+    <p id="yeni-baslik" class="sayfa-baslik">Yeni iş</p>
+    <div class="satirlar">
+      <label>Ne yapılacak? <input id="yeni-ad" type="text" maxlength="140" autocomplete="off" placeholder="Hocaya ödev için mail at" required></label>
+    </div>
+    <p class="soluk kucuk yeni-etiket">Kategori</p>
+    <div id="yeni-kat" class="kategoriler sarili" role="radiogroup" aria-label="Kategori"></div>
+    <p class="soluk kucuk yeni-etiket">Önem</p>
+    <div id="yeni-onem" class="parcali" role="radiogroup" aria-label="Önem">
+      <button type="button" data-onem="⏫">Yüksek</button>
+      <button type="button" data-onem="🔼" class="secili">Orta</button>
+      <button type="button" data-onem="🔽">Düşük</button>
+    </div>
+    <div class="ikili satirlar">
+      <label>Yapacağım gün <input id="yeni-gun" type="date"></label>
+      <label>Son tarih (varsa) <input id="yeni-son" type="date"></label>
+    </div>
+    <p id="yeni-hata" class="hata" hidden></p>
+    <div class="ikili">
+      <button type="button" id="yeni-vazgec" class="soluk-dugme vazgec">Vazgeç</button>
+      <button type="submit" class="buyuk">Ekle</button>
+    </div>
+  </form>
 
   <template id="sablon-gorev">
     <li class="gorev">

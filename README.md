@@ -13,6 +13,9 @@ Adres: https://zihnimin-kivrimlari.swm-server.workers.dev (Cloudflare Workers, s
 - **◎ Harita:** notların bağlantı haritası, klasör kartları, arama, not okuyucu.
 - **▦ Takvim:** 7 günlük şerit; seçilen günün etkinlikleri, o günün işleri, yaklaşan sınav ve teslimler (kalan gün).
 - **☰ Daha:** Tüm görevler (arama, filtreler: gecikmiş, bugün, 7 gün, bekleyen, tarihsiz; kategori grupları; son bitenler) · Alışkanlıklar (5 haftalık takvim, seri, en uzun seri, oran, haftalık skor) · Din takibi (kalan kaza, okumalar, son kayıtlar) · Uyku ve GYM (son 7 gece, ortalama, yatış düzeni, haftalık GYM) · Gidişat · Rehberler · Ayarlar.
+- **＋ Yeni iş:** Bugün ve Takvim ekranından ad, kategori, önem, yapılacak gün ve son tarih ile iş ekleme; girdi dosyasına `Görevler.md` biçiminde yazılır.
+- **Harita:** iki parmak / fare tekerleği ile yakınlaştırma, sürükleyerek kaydırma, +/−/⟲ düğmeleri (sayfanın kendisi büyümez).
+- **Bilgisayar:** 900 px üstünde sol kenarda menü, iki sütunlu Bugün / Takvim / Giriş, ortada açılan pencereler. Chrome / Edge'de adres çubuğundaki "Yükle" simgesiyle bilgisayara da uygulama olarak kurulur.
 - **▤ Gidişat:** 14 günlük alışkanlık ısı haritası ve seriler, kalan kaza, haftalık GYM, staj ve uyku.
 
 ## Güvenlik

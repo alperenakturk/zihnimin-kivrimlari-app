@@ -1,6 +1,6 @@
 "use strict";
 /* Zihnimin Kıvrımları · kişisel günlük panel (PWA)
-   Veri: kullanıcının kendi (gizli) GitHub reposu. Bu kodda kişisel veri yoktur.
+   PİLOT: hiçbir sunucuya bağlanmaz, anahtar istemez. Örnek (uydurma) veriyle çalışır; girişler yalnızca bu cihazda kalır.
    Okur:  05 Günlük Sistem/Görevler.md · 00 Bu Hafta.md · 05 Günlük Sistem/Bugün.json
           06 Haritalar/harita.json · Alışkanlıklar.md · Din Takibi.md · Uyku ve GYM Takibi.md · notlar
    Yazar: yalnızca 05 Günlük Sistem/Girdiler/YYYY-MM-DD.md (özet + ```json bloğu). */
@@ -30,7 +30,6 @@ const TUR_RENK = { ders: "okul", sinav: "guv", staj: "staj", sosyal: "geek", pro
 const GUN_DONUMU_SAAT = 5;
 
 const $ = (s) => document.querySelector(s);
-const demo = new URLSearchParams(location.search).has("demo");
 const durum = {
   gun: gunHesapla(), gorevler: [], hafta: [], plan: null, girdi: null, girdiSha: null,
   degisti: false, kategori: "hepsi", ekran: "bugun",
@@ -60,50 +59,22 @@ function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 function ayarOku() { try { return JSON.parse(localStorage.getItem("zk-ayar") || "{}"); } catch { return {}; } }
 function ayarYaz(a) { try { localStorage.setItem("zk-ayar", JSON.stringify(a)); } catch { /* özel pencere */ } }
 
-/* ---------- GitHub ---------- */
-function b64Coz(b64) { const bin = atob(b64.replace(/\n/g, "")); return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))); }
-function b64Yap(metin) {
-  const b = new TextEncoder().encode(metin); let bin = "";
-  for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode(...b.subarray(i, i + 0x8000));
-  return btoa(bin);
-}
-function yolKodla(yol) { return yol.split("/").map(encodeURIComponent).join("/"); }
-function repoGecerli(r) { return /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(r || ""); }
+/* ---------- PİLOT DEPOLAMA ----------
+   Pilot sürüm hiçbir sunucuya bağlanmaz: okunan veri ornek.js'teki UYDURMA örnektir,
+   kaydedilen girişler yalnızca bu cihazın tarayıcısında (localStorage) kalır. */
+const GIRDI_ON = "zk-girdi:";
 async function dosyaOku(yol) {
-  if (demo) {
-    const r = await fetch("demo/" + yolKodla(yol), { cache: "no-store" });
-    if (r.status === 404) return null;
-    if (!r.ok) throw new Error("Demo dosyası okunamadı.");
-    return { metin: await r.text(), sha: null };
+  if (yol.startsWith(YOL.girdiKlasor + "/")) {
+    let v = null; try { v = localStorage.getItem(GIRDI_ON + yol); } catch { /* özel pencere */ }
+    return v == null ? null : { metin: v, sha: null };
   }
-  const a = ayarOku();
-  if (!repoGecerli(a.repo)) throw new Error("Repo adı geçersiz (Ayarlar).");
-  const r = await fetch(`https://api.github.com/repos/${a.repo}/contents/${yolKodla(yol)}?ref=${encodeURIComponent(a.dal || "main")}`, {
-    headers: { Authorization: `Bearer ${a.token}`, Accept: "application/vnd.github+json" }, cache: "no-store", referrerPolicy: "no-referrer",
-  });
-  if (r.status === 404) return null;
-  if (r.status === 401 || r.status === 403) throw new Error("Anahtar geçersiz ya da izni yok (Ayarlar).");
-  if (!r.ok) throw new Error(`GitHub hatası ${r.status}`);
-  const j = await r.json();
-  if (j.content == null && j.download_url) { // 1 MB üstü dosyalar
-    const r2 = await fetch(j.git_url, { headers: { Authorization: `Bearer ${a.token}`, Accept: "application/vnd.github.raw" }, referrerPolicy: "no-referrer" });
-    return { metin: await r2.text(), sha: j.sha };
-  }
-  return { metin: b64Coz(j.content || ""), sha: j.sha };
+  const m = ORNEK[yol];
+  return m == null ? null : { metin: m, sha: null };
 }
-async function dosyaYaz(yol, metin, mesaj, sha) {
-  if (demo) return { sha: null };
-  const a = ayarOku();
-  const govde = { message: mesaj, content: b64Yap(metin), branch: a.dal || "main" };
-  if (sha) govde.sha = sha;
-  const r = await fetch(`https://api.github.com/repos/${a.repo}/contents/${yolKodla(yol)}`, {
-    method: "PUT", referrerPolicy: "no-referrer",
-    headers: { Authorization: `Bearer ${a.token}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
-    body: JSON.stringify(govde),
-  });
-  if (r.status === 409 || r.status === 422) { const e = new Error("çakışma"); e.cakisma = true; throw e; }
-  if (!r.ok) throw new Error(`Kaydedilemedi (GitHub ${r.status})`);
-  return { sha: (await r.json()).content.sha };
+async function dosyaYaz(yol, metin) {
+  if (!yol.startsWith(YOL.girdiKlasor + "/")) throw new Error("Pilot sürüm yalnızca kendi girişlerini kaydeder.");
+  try { localStorage.setItem(GIRDI_ON + yol, metin); } catch { throw new Error("Bu tarayıcı kayda izin vermiyor (özel pencere?)."); }
+  return { sha: null };
 }
 
 /* ---------- ayrıştırma ---------- */
@@ -177,7 +148,7 @@ function siralama(a, b) {
 function cizBugun() {
   const ad = ayarOku().ad; const s = new Date().getHours();
   $("#selam").textContent = (s < 12 ? "Günaydın" : s < 18 ? "İyi günler" : "İyi akşamlar") + (ad ? `, ${ad}` : "");
-  $("#tarih").textContent = gunYazi(durum.gun) + (demo ? " · demo" : "");
+  $("#tarih").textContent = gunYazi(durum.gun) + " · pilot";
   cizOzet(); cizTakvim();
   const bugun = bugunListesi();
   // kategoriler
@@ -372,7 +343,7 @@ async function kaydet() {
     catch (e) { if (!e.cakisma) throw e; const son = await dosyaOku(yol); s = await dosyaYaz(yol, girdiMarkdown(durum.girdi), mesaj, son && son.sha); }
     durum.girdiSha = s.sha; durum.degisti = false; titret();
     try { localStorage.removeItem("zk-taslak"); } catch { /* yok */ }
-    kayitMesaj = demo ? "Demo: kaydedilmedi (gerçek modda kasaya yazılır)" : "";
+    kayitMesaj = "";
   } catch (e) {
     Object.assign(durum.girdi, yedek); kayitMesaj = "⚠️ " + e.message;
   }
@@ -385,7 +356,7 @@ async function haritaYukle() {
   if (durum.haritaYuklendi) return; durum.haritaYuklendi = true;
   try {
     const r = await dosyaOku(YOL.harita);
-    if (!r) throw new Error("Harita dosyası yok. Kasada .araclar/harita_uret.py çalışınca oluşur.");
+    if (!r) throw new Error("Harita verisi yok.");
     const v = JSON.parse(r.metin);
     const adla = new Map(); const komsu = new Map();
     for (const d of v.dugumler) { adla.set(d.ad.toLowerCase(), d); komsu.set(d.yol, new Set()); }
@@ -630,9 +601,7 @@ function sayacKart(etiket, deger, oran, alt) {
 function bilgi(m, tur) { const b = $("#durum"); b.hidden = !m; b.textContent = m || ""; b.className = "bilgi" + (tur ? " " + tur : ""); }
 function taslakAl(gun) { try { const t = JSON.parse(localStorage.getItem("zk-taslak") || "null"); return t && t.gun === gun ? t : null; } catch { return null; } }
 async function yukle() {
-  const a = ayarOku();
-  if (!demo && (!a.repo || !a.token)) { durum.girdi = bosGirdi(durum.gun); bilgi("Önce Ayarlar'dan repo ve anahtar gir."); cizBugun(); cizGiris(); ekranAc("ayar"); return; }
-  bilgi("Kasadan okunuyor…");
+  bilgi("");
   try {
     const [g, h, p, gi] = await Promise.all([dosyaOku(YOL.gorevler), dosyaOku(YOL.hafta), dosyaOku(YOL.bugun), dosyaOku(`${YOL.girdiKlasor}/${durum.gun}.md`)]);
     durum.gorevler = g ? gorevleriAyristir(g.metin) : [];
@@ -660,19 +629,10 @@ $("#ayar-ac").addEventListener("click", () => ekranAc(durum.ekran === "ayar" ? "
 
 (function ayarEkrani() {
   const a = ayarOku();
-  $("#ayar-ad").value = a.ad || ""; $("#ayar-repo").value = a.repo || ""; $("#ayar-dal").value = a.dal || "main"; $("#ayar-token").value = a.token || "";
-  $("#ayar-kaydet").addEventListener("click", async () => {
-    const yeni = { ad: $("#ayar-ad").value.trim().slice(0, 40), repo: $("#ayar-repo").value.trim(), dal: $("#ayar-dal").value.trim() || "main", token: $("#ayar-token").value.trim() };
-    const d = $("#ayar-durum"); d.hidden = false;
-    if (!repoGecerli(yeni.repo)) { d.className = "bilgi kotu"; d.textContent = "Repo 'kullanici/repo' biçiminde olmalı."; return; }
-    ayarYaz(yeni); d.className = "bilgi"; d.textContent = "Deneniyor…";
-    try {
-      if (!demo) { const r = await dosyaOku(YOL.gorevler); if (!r) throw new Error("Görevler dosyası bulunamadı; repo adı doğru mu?"); }
-      d.className = "bilgi iyi"; d.textContent = "Bağlandı ✓"; await yukle(); ekranAc("bugun");
-    } catch (e) { d.className = "bilgi kotu"; d.textContent = "⚠️ " + e.message; }
-  });
+  $("#ayar-ad").value = a.ad || "";
+  $("#ayar-ad").addEventListener("change", (e) => { ayarYaz({ ad: e.target.value.trim().slice(0, 40) }); cizBugun(); });
   $("#ayar-sil").addEventListener("click", async () => {
-    if (!confirm("Anahtar, ayarlar ve kaydedilmemiş taslak bu cihazdan silinsin mi? (Kasadaki verine dokunulmaz.)")) return;
+    if (!confirm("Bu cihazdaki tüm girişler ve ayarlar silinsin mi?")) return;
     try { localStorage.clear(); } catch { /* yok */ }
     try { for (const k of await caches.keys()) await caches.delete(k); } catch { /* yok */ }
     location.reload();
@@ -688,7 +648,7 @@ document.addEventListener("visibilitychange", () => {
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 document.addEventListener("touchmove", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
-if ("serviceWorker" in navigator && !demo) {
+if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   // yeni sürüm gelince (kaydedilmemiş değişiklik yoksa) bir kez kendini yenile
   let yenilendi = false;

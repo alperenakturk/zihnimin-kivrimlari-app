@@ -1,6 +1,6 @@
 // Uygulama kabuğunu önbelleğe alır (çevrimdışı açılsın). GitHub API isteklerine dokunmaz.
-const SURUM = "zk-v3";
-const KABUK = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
+const SURUM = "zk-v4";
+const KABUK = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest", "ornek.js", "icon.svg", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(SURUM).then((c) => c.addAll(KABUK)).then(() => self.skipWaiting()));

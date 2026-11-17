@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#f4f6fb">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -124,26 +124,9 @@
       <div class="satirlar">
         <label>Adın (selamda görünür, yalnızca bu cihazda) <input id="ayar-ad" type="text" autocomplete="off" placeholder="Adın"></label>
       </div>
-      <h2>Bağlantı</h2>
-      <p class="soluk kucuk">Uygulama verini doğrudan kendi gizli GitHub reponda okur ve yazar. Anahtar yalnızca bu cihazda saklanır ve sadece api.github.com'a gönderilir.</p>
-      <div class="satirlar">
-        <label>Repo <input id="ayar-repo" type="text" autocomplete="off" spellcheck="false" placeholder="kullanici/repo"></label>
-        <label>Dal <input id="ayar-dal" type="text" autocomplete="off" spellcheck="false" placeholder="main"></label>
-        <label>GitHub anahtarı (token) <input id="ayar-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
-      </div>
-      <button id="ayar-kaydet" class="buyuk">Kaydet ve bağlan</button>
-      <p id="ayar-durum" class="bilgi" hidden></p>
-      <details class="acilir">
-        <summary>Anahtar nasıl alınır?</summary>
-        <ol class="kucuk">
-          <li>github.com → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
-          <li>Repository access: <b>Only select repositories</b> → yalnızca kasa reposu.</li>
-          <li>Permissions → Repository → <b>Contents: Read and write</b>. Başka izin verme.</li>
-          <li>Süreyi seç, oluştur, buraya yapıştır.</li>
-        </ol>
-      </details>
-      <button id="ayar-sil" class="sil">Bu cihazdan anahtarı ve verileri sil</button>
-      <p class="soluk kucuk">Anahtarsız denemek için adrese <code>?demo</code> ekle; demo modunda hiçbir şey kaydedilmez.</p>
+      <h2>Pilot sürüm</h2>
+      <div class="bilgi iyi">Bu sürüm hiçbir hesaba ya da sunucuya bağlanmaz ve anahtar istemez. Gördüğün görevler, notlar ve sayılar uydurma örnek veridir. Kaydettiğin girişler yalnızca bu telefonda kalır.</div>
+      <button id="ayar-sil" class="sil">Bu cihazdaki girişleri ve ayarları sil</button>
     </section>
   </main>
 
@@ -191,6 +174,7 @@
     </li>
   </template>
 
+  <script src="ornek.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

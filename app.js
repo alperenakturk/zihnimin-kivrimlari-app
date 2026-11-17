@@ -684,5 +684,14 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible" || durum.degisti) return;
   const g = gunHesapla(); if (g !== durum.gun) { durum.gun = g; yukle(); } else if (durum.ekran === "bugun") cizTakvim();
 });
-if ("serviceWorker" in navigator && !demo) navigator.serviceWorker.register("sw.js").catch(() => {});
+// iPhone Safari "user-scalable=no"yu yok sayar: iki parmakla büyütmeyi burada engelle
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+document.addEventListener("touchmove", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
+if ("serviceWorker" in navigator && !demo) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+  // yeni sürüm gelince (kaydedilmemiş değişiklik yoksa) bir kez kendini yenile
+  let yenilendi = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (!yenilendi && !durum.degisti) { yenilendi = true; location.reload(); } });
+}
 yukle();

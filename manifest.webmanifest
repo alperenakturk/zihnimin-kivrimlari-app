@@ -5,6 +5,8 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone"],
+  "orientation": "portrait",
   "background_color": "#f4f6fb",
   "theme_color": "#f4f6fb",
   "lang": "tr",

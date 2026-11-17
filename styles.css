@@ -28,6 +28,13 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+/* telefon: yakınlaştırma yok, çift dokunma yakınlaştırmaz, sayfa yana kaymaz, yazı boyutu kendiliğinden büyümez */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
+body { overflow-x: hidden; overscroll-behavior-y: contain; -webkit-user-select: none; user-select: none; }
+textarea, input, .not, .not * { -webkit-user-select: text; user-select: text; }
+/* iPhone, 16px'ten küçük alanlara dokununca sayfayı büyütür: hepsi 16px */
+input, textarea, select { font-size: 16px !important; }
+button { touch-action: manipulation; }
 body {
   background: var(--zemin); color: var(--yazi);
   font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

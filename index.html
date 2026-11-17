@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1c1b22">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Zihnimin Kıvrımları</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="ust">
+    <div>
+      <h1>Zihnimin Kıvrımları</h1>
+      <p id="tarih" class="soluk"></p>
+    </div>
+    <button id="yenile" class="ikon" title="Kasadan yenile" aria-label="Yenile">↻</button>
+  </header>
+
+  <main>
+    <!-- BUGÜN -->
+    <section id="ekran-bugun" class="ekran aktif">
+      <div id="durum-bugun" class="bilgi"></div>
+
+      <h2>Bu haftanın 3 işi</h2>
+      <ul id="hafta" class="liste sade"></ul>
+
+      <h2>Bugün <span id="sayac-bugun" class="rozet"></span></h2>
+      <ul id="gorevler" class="liste"></ul>
+
+      <details id="bekleyen-kutu">
+        <summary>Bekleyenler ve yaklaşanlar <span id="sayac-bekleyen" class="rozet"></span></summary>
+        <ul id="bekleyenler" class="liste"></ul>
+      </details>
+    </section>
+
+    <!-- GİRİŞ -->
+    <section id="ekran-giris" class="ekran">
+      <h2>Kafamdan geçenler</h2>
+      <textarea id="karalama" rows="5" placeholder="Bugün şunu yaptım, şunu düşündüm, yarın şunu yapmalıyım…"></textarea>
+
+      <h2>Günlük işler</h2>
+      <div class="kutucuklar" id="aliskanliklar"></div>
+
+      <h2>Namaz</h2>
+      <p class="soluk kucuk">Kılınan kaza: +/− ile say. Vaktinde kılamadığın vakte dokun (kırmızı olur).</p>
+      <div id="namaz" class="namaz"></div>
+
+      <h2>Diğer</h2>
+      <div class="satirlar">
+        <label>Staj (saat) <input id="staj" type="number" inputmode="decimal" min="0" max="24" step="0.5" placeholder="0"></label>
+        <label>Dün gece yattım <input id="yatti" type="time"></label>
+        <label>Bu sabah kalktım <input id="kalkti" type="time"></label>
+      </div>
+    </section>
+
+    <!-- AYARLAR -->
+    <section id="ekran-ayar" class="ekran">
+      <h2>Bağlantı</h2>
+      <p class="soluk kucuk">Uygulama verini doğrudan gizli GitHub reponda okur ve yazar. Anahtar yalnızca bu cihazda saklanır.</p>
+      <div class="satirlar">
+        <label>Repo <input id="ayar-repo" type="text" autocomplete="off" spellcheck="false" placeholder="kullanici/repo"></label>
+        <label>Dal <input id="ayar-dal" type="text" autocomplete="off" spellcheck="false" placeholder="main"></label>
+        <label>GitHub anahtarı (token) <input id="ayar-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
+      </div>
+      <button id="ayar-kaydet" class="buyuk">Kaydet ve bağlan</button>
+      <p id="ayar-durum" class="bilgi"></p>
+      <details>
+        <summary>Anahtar nasıl alınır?</summary>
+        <ol class="kucuk">
+          <li>github.com → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
+          <li>Repository access: <b>Only select repositories</b> → yalnızca kasa reposu.</li>
+          <li>Permissions → Repository → <b>Contents: Read and write</b>. Başka izin verme.</li>
+          <li>Süreyi 1 yıl seç, oluştur, buraya yapıştır.</li>
+        </ol>
+      </details>
+      <h2>Demo</h2>
+      <p class="soluk kucuk">Anahtarsız denemek için: adrese <code>?demo</code> ekle. Demo modunda hiçbir şey kaydedilmez.</p>
+    </section>
+  </main>
+
+  <div class="kaydet-cubugu">
+    <span id="kayit-durum" class="soluk kucuk"></span>
+    <button id="kaydet" class="buyuk" disabled>Kaydet</button>
+  </div>
+
+  <nav class="alt">
+    <button data-ekran="bugun" class="aktif">☀️<span>Bugün</span></button>
+    <button data-ekran="giris">✍️<span>Giriş</span></button>
+    <button data-ekran="ayar">⚙️<span>Ayarlar</span></button>
+  </nav>
+
+  <template id="sablon-gorev">
+    <li class="gorev">
+      <div class="gorev-ust">
+        <span class="oncelik"></span>
+        <span class="metin"></span>
+      </div>
+      <div class="gorev-alt">
+        <span class="etiketler soluk kucuk"></span>
+        <span class="karar kucuk"></span>
+      </div>
+      <div class="dugmeler">
+        <button data-karar="bitti">✓ Bitti</button>
+        <button data-karar="kismen">◐ Kısmen</button>
+        <button data-karar="yarin">→ Yarına</button>
+        <button data-karar="gun">📅 Gün</button>
+        <button data-karar="iptal">✕ İptal</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

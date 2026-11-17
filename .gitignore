@@ -1,0 +1,8 @@
+# demo/ kasadan kopyalanan kişisel veri içerir: asla repoya girmez
+demo/
+# yerel ayarlar
+.claude/
+# olası yerel kopyalar ve anahtarlar
+*.env
+.env*
+*.local

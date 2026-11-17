@@ -1,5 +1,5 @@
 // Uygulama kabuğunu önbelleğe alır (çevrimdışı açılsın). GitHub API isteklerine dokunmaz.
-const SURUM = "zk-v8";
+const SURUM = "zk-v9";
 const KABUK = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest", "ornek.js", "guvenlik.js", "icon.svg", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {

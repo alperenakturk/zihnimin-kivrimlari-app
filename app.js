@@ -94,9 +94,9 @@ function gorevleriBirlestir() {
 function yeniAc(gun) {
   const f = $("#yeni"); $("#yeni-ad").value = ""; $("#yeni-son").value = ""; $("#yeni-gun").value = gun || durum.gun; $("#yeni-gun").min = durum.gun;
   $("#yeni-hata").hidden = true; durum.yeniKat = durum.yeniKat || "okul"; durum.yeniOnem = "🔼";
-  yeniCiz(); $("#perde").hidden = false; f.hidden = false; setTimeout(() => $("#yeni-ad").focus(), 50);
+  yeniCiz(); $("#perde").hidden = false; f.hidden = false; pencereAcildi(); setTimeout(() => $("#yeni-ad").focus(), 50);
 }
-function yeniKapat() { $("#yeni").hidden = true; if ($("#sayfa").hidden) $("#perde").hidden = true; }
+function yeniKapat() { const acikti = !$("#yeni").hidden; $("#yeni").hidden = true; if ($("#sayfa").hidden) $("#perde").hidden = true; if (acikti) pencereKapandi(); }
 function yeniCiz() {
   const kk = $("#yeni-kat"); kk.replaceChildren();
   for (const [k, ad] of YENI_KAT) {
@@ -333,10 +333,10 @@ function sayfaAc(t) {
   const gi = $("#sayfa-gun"); gi.value = gunEkle(durum.gun, 2); gi.min = gunEkle(durum.gun, 1);
   $("#sayfa-geri").hidden = !durum.girdi.gorevler[t.ad];
   $("#sayfa-sil").hidden = !t.yeni;
-  $("#perde").hidden = false; $("#sayfa").hidden = false;
+  $("#perde").hidden = false; $("#sayfa").hidden = false; pencereAcildi();
   $("#sayfa").querySelector("button").focus();
 }
-function sayfaKapat() { $("#perde").hidden = true; $("#sayfa").hidden = true; durum.sayfaGorev = null; }
+function sayfaKapat() { const acikti = !$("#sayfa").hidden; $("#perde").hidden = true; $("#sayfa").hidden = true; durum.sayfaGorev = null; if (acikti) pencereKapandi(); }
 $("#perde").addEventListener("click", () => { sayfaKapat(); yeniKapat(); if (typeof yzKapat === "function") yzKapat(); if (typeof kilitKapat === "function" && !$("#kilit").hidden) kilitKapat(false); });
 for (const b of document.querySelectorAll("#sayfa button")) {
   b.addEventListener("click", () => { const t = durum.sayfaGorev; if (b.dataset.karar !== "kapat" && t) kararVer(t, b.dataset.karar); sayfaKapat(); });
@@ -466,14 +466,13 @@ function klasorAc(k) {
   const ul = $("#klasor-notlar"); ul.replaceChildren();
   for (const d of durum.harita.dugumler.filter((x) => x.klasor === k)) ul.append(notDugmesi(d));
   durum.notYigini = []; haritaGorunum("klasor");
+  gecmisKaydet({ ekran: "harita", harita: "klasor", klasor: k });
 }
-$("#klasor-geri").addEventListener("click", () => haritaGorunum("ana"));
-$("#not-geri").addEventListener("click", () => {
-  durum.notYigini.pop(); const onceki = durum.notYigini.pop();
-  if (onceki) notAc(onceki); else haritaGorunum($("#klasor-notlar").children.length ? "klasor" : "ana");
-});
+$("#klasor-geri").addEventListener("click", () => geriGit(() => { haritaGorunum("ana"); gecmisKaydet({ ekran: "harita", harita: "ana" }); }));
+$("#not-geri").addEventListener("click", () => geriGit(() => { haritaGorunum("ana"); gecmisKaydet({ ekran: "harita", harita: "ana" }); }));
 async function notAc(yol) {
   durum.notYigini.push(yol); haritaGorunum("not");
+  gecmisKaydet({ ekran: "harita", harita: "not", not: yol });
   const d = durum.harita.yolla.get(yol); const kap = $("#not-icerik");
   $("#not-yol").textContent = yol.replace(/\.md$/, "").split("/").join(" › ");
   kap.textContent = "Yükleniyor…";
@@ -910,7 +909,7 @@ async function rehberYukle() {
   const rehber = durum.harita.dugumler.filter((d) => d.klasor === "06 Haritalar" || d.ad.toLocaleLowerCase("tr").includes("okuma ve izleme"));
   for (const d of rehber) {
     const li = notDugmesi(d);
-    li.querySelector("button").addEventListener("click", () => ekranAc("harita"), { capture: true });
+    li.querySelector("button").addEventListener("click", () => { haritaGorunum("ana"); ekranAc("harita"); }, { capture: true });
     ul.append(li);
   }
   if (!rehber.length) ul.append(el("li", "bos", "Rehber notu yok."));
@@ -945,9 +944,53 @@ async function yukle() {
   cizBugun(); cizGiris(); kaydetDurum();
   if (durum.ekran === "harita") haritaYukle(); if (durum.ekran === "gidisat") gidisatYukle();
 }
+/* ---------- GERİ TUŞU: uygulama içi geçmiş ----------
+   Her ekran / harita adımı / açılan pencere tarayıcı geçmişine bir adım ekler.
+   Telefonun geri tuşu önce açık pencereyi kapatır, sonra bir önceki ekrana döner;
+   uygulamadan yalnızca en baştaki ekrandayken çıkılır. */
+let gecmisDonuyor = false, popKapatma = false;
+const yigin = [{ ekran: "bugun" }];
+durum.konum = { ekran: "bugun" };
+function konumAnahtar(k) { return [k.ekran, k.ekran === "harita" ? k.harita || "ana" : "", k.harita === "klasor" ? k.klasor || "" : "", k.harita === "not" ? k.not || "" : ""].join("|"); }
+function gecmisKaydet(k) {
+  if (gecmisDonuyor) { durum.konum = k; return; }
+  if (konumAnahtar(k) === konumAnahtar(durum.konum)) { durum.konum = k; return; }
+  durum.konum = k; yigin.push(k);
+  try { history.pushState({ zk: 1, ...k }, ""); } catch { /* yok */ }
+}
+function pencereAcildi() {
+  if (gecmisDonuyor) return; yigin.push({ ...durum.konum, pencere: true });
+  try { history.pushState({ zk: 1, ...durum.konum, pencere: true }, ""); } catch { /* yok */ }
+}
+function pencereKapandi() { if (popKapatma) return; if (history.state && history.state.pencere) history.back(); }
+function geriGit(yedek, uygun = () => true) {
+  const onceki = yigin[yigin.length - 2];
+  if (onceki && !onceki.pencere && uygun(onceki)) history.back(); else yedek();
+}
+async function konumaGit(st) {
+  if (st.ekran !== durum.ekran) ekranAc(st.ekran);
+  if (st.ekran === "harita") {
+    if (st.harita === "not" || st.harita === "klasor") { if (!durum.harita) await haritaYukle(); if (!durum.harita) return; }
+    if (st.harita === "not" && st.not) notAc(st.not); else if (st.harita === "klasor" && st.klasor) klasorAc(st.klasor); else haritaGorunum("ana");
+  }
+  durum.konum = { ekran: st.ekran, harita: st.harita, klasor: st.klasor, not: st.not };
+}
+try { history.replaceState({ zk: 1, ekran: "bugun" }, ""); } catch { /* yok */ }
+window.addEventListener("popstate", async (e) => {
+  if (yigin.length > 1) yigin.pop();
+  const acik = [["#kilit", () => kilitKapat(false)], ["#yz-sayfa", () => yzKapat()], ["#yeni", () => yeniKapat()], ["#sayfa", () => sayfaKapat()]].find(([sec]) => !$(sec).hidden);
+  if (acik) { popKapatma = true; try { acik[1](); } finally { popKapatma = false; } return; }
+  const st = e.state && e.state.zk ? e.state : { ekran: "bugun" };
+  if (st.pencere) { history.back(); return; } // penceresi zaten kapanmış bir adım: atla
+  if (konumAnahtar(st) === konumAnahtar(durum.konum)) return;
+  gecmisDonuyor = true;
+  try { await konumaGit(st); } finally { gecmisDonuyor = false; }
+});
+
 const ALT_EKRAN = ["gorevler", "aliskanlik", "din", "uyku", "rehber", "gidisat", "ayar"];
 function ekranAc(ad) {
   durum.ekran = ad;
+  gecmisKaydet(ad === "harita" ? { ekran: "harita", harita: $("#not-gorunum").hidden ? ($("#klasor-gorunum").hidden ? "ana" : "klasor") : "not", ...(durum.konum.ekran === "harita" ? { klasor: durum.konum.klasor, not: durum.konum.not } : {}) } : { ekran: ad });
   const sekme = ALT_EKRAN.includes(ad) ? "daha" : ad;
   for (const s of document.querySelectorAll(".ekran")) s.classList.toggle("aktif", s.id === "ekran-" + ad);
   for (const b of document.querySelectorAll(".alt button")) { const ak = b.dataset.ekran === sekme; b.classList.toggle("aktif", ak); b.setAttribute("aria-current", ak ? "page" : "false"); }
@@ -963,7 +1006,11 @@ function ekranAc(ad) {
   kaydetDurum(); window.scrollTo({ top: 0 });
 }
 for (const b of document.querySelectorAll(".alt button")) b.addEventListener("click", () => { if (b.dataset.ekran === "harita" && durum.ekran === "harita") haritaGorunum("ana"); ekranAc(b.dataset.ekran); });
-for (const b of document.querySelectorAll("[data-git]")) b.addEventListener("click", () => ekranAc(b.dataset.git));
+for (const b of document.querySelectorAll("[data-git]")) b.addEventListener("click", () => {
+  // ekrandaki "‹ Daha" gibi geri düğmeleri: bir önceki adım oysa gerçekten geri git (geçmiş şişmesin)
+  if (b.classList.contains("geri")) return geriGit(() => ekranAc(b.dataset.git), (k) => k.ekran === b.dataset.git);
+  ekranAc(b.dataset.git);
+});
 $("#ayar-ac").addEventListener("click", () => ekranAc(durum.ekran === "ayar" ? "bugun" : "ayar"));
 
 /* ---------- AYARLAR ---------- */
@@ -1012,10 +1059,10 @@ function kilitAc(aciklama, yeniPin = false, ilkVeri = null) {
     $("#kilit-tekrar-satir").hidden = !yeniPin; $("#kilit-tamam").textContent = yeniPin ? "Şifrele ve kaydet" : "Aç";
     $("#kilit-pin").value = ""; $("#kilit-pin2").value = ""; $("#kilit-hata").hidden = true;
     f.dataset.yeni = yeniPin ? "1" : ""; f._ilk = ilkVeri;
-    $("#perde").hidden = false; f.hidden = false; setTimeout(() => $("#kilit-pin").focus(), 50);
+    $("#perde").hidden = false; f.hidden = false; pencereAcildi(); setTimeout(() => $("#kilit-pin").focus(), 50);
   });
 }
-function kilitKapat(sonuc) { $("#kilit").hidden = true; if ($("#sayfa").hidden && $("#yeni").hidden && $("#yz-sayfa").hidden) $("#perde").hidden = true; if (kilitCoz) { const c = kilitCoz; kilitCoz = null; c(sonuc); } }
+function kilitKapat(sonuc) { const acikti = !$("#kilit").hidden; $("#kilit").hidden = true; if (acikti) pencereKapandi(); if ($("#sayfa").hidden && $("#yeni").hidden && $("#yz-sayfa").hidden) $("#perde").hidden = true; if (kilitCoz) { const c = kilitCoz; kilitCoz = null; c(sonuc); } }
 $("#kilit-vazgec").addEventListener("click", () => kilitKapat(false));
 $("#kilit").addEventListener("submit", async (e) => {
   e.preventDefault(); const f = $("#kilit"); const pin = $("#kilit-pin").value; const hata = $("#kilit-hata");
@@ -1182,9 +1229,9 @@ function yzOnerileriGoster(liste) {
     lb.append(cb, n, ic); li.append(lb); ul.append(li);
   });
   $("#yz-ekle").hidden = !yzOneriler.length;
-  $("#perde").hidden = false; $("#yz-sayfa").hidden = false;
+  $("#perde").hidden = false; $("#yz-sayfa").hidden = false; pencereAcildi();
 }
-function yzKapat() { $("#yz-sayfa").hidden = true; if ($("#sayfa").hidden && $("#yeni").hidden && $("#kilit").hidden) $("#perde").hidden = true; }
+function yzKapat() { const acikti = !$("#yz-sayfa").hidden; $("#yz-sayfa").hidden = true; if (acikti) pencereKapandi(); if ($("#sayfa").hidden && $("#yeni").hidden && $("#kilit").hidden) $("#perde").hidden = true; }
 $("#yz-vazgec").addEventListener("click", yzKapat);
 $("#yz-ekle").addEventListener("click", () => {
   const sec = yzOneriler.filter((o) => o.sec); if (!sec.length) return yzKapat();

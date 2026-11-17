@@ -2,7 +2,15 @@
 
 Telefona kurulan kişisel günlük panel (PWA). Tek kullanıcı içindir. Derleme gerektirmez: düz HTML, CSS ve JavaScript.
 
-> **Pilot sürüm:** uygulama hiçbir hesaba, sunucuya ya da API'ye bağlanmaz ve anahtar istemez. Ekrandaki görevler, notlar ve sayılar `ornek.js` içindeki **uydurma** örnek veridir. Kaydedilen girişler yalnızca cihazın tarayıcısında (localStorage) kalır.
+> **Varsayılan: pilot.** Uygulama kendiliğinden hiçbir hesaba ya da API'ye bağlanmaz. Ekrandaki görevler, notlar ve sayılar `ornek.js` içindeki **uydurma** örnek veridir; girişler yalnızca cihazın tarayıcısında (localStorage) kalır. GitHub kasası ve Claude bağlantısı yalnızca Ayarlar'dan bilerek açılırsa çalışır.
+
+## Ayarlar
+
+- **Profil:** ad. **Görünüm:** Açık / Koyu / Otomatik tema, yazı boyutu, animasyon ve titreşim. **Gün:** gün dönümü saati.
+- **Veri kaynağı:** Pilot (örnek veri) ya da GitHub kasası (repo, dal, fine-grained token; yalnızca `05 Günlük Sistem/Girdiler/` altına yazar). "Bağlantıyı dene" reponun gizli olup olmadığını da söyler.
+- **Yapay zekâ (Claude):** API anahtarı ve model (Opus 5.5 varsayılan, Sonnet 5.5, Haiku 5.5). Özellik: Giriş → "Karalamadan iş çıkar" (yalnızca karalama metni gönderilir, ilk kullanımda onay sorulur). Anthropic'in resmi JS SDK'sı `vendor/anthropic-sdk.js` olarak pakete dahil, yalnızca özellik kullanılınca yüklenir; Opus/Sonnet'te güvenlik reddine karşı sunucu tarafı yedek model (`fallbacks: "default"`) açık.
+- **Güvenlik:** anahtarlar PIN ile şifreli kasada (AES-256-GCM, PBKDF2-SHA256 600.000 tur; PIN en az 6 karakter; 10 yanlış PIN'de kasa silinir), arka planda 5 dk sonra otomatik kilit, şimdi kilitle, PIN değiştir, anahtarları sil.
+- **Veri:** girişleri JSON olarak dışa / içe aktarma (anahtarlar dosyaya yazılmaz), tüm verileri silme.
 
 Adres: https://zihnimin-kivrimlari.swm-server.workers.dev (Cloudflare Workers, sabit dosyalar)
 
@@ -20,7 +28,7 @@ Adres: https://zihnimin-kivrimlari.swm-server.workers.dev (Cloudflare Workers, s
 
 ## Güvenlik
 
-- Sayfa dışarıya hiçbir istek atamaz: içerik güvenlik politikası (CSP) `connect-src 'self'`; dış betik, stil, yazı tipi, analitik ya da takip kodu yok.
+- Sayfa yalnızca kendisine, `api.github.com` ve `api.anthropic.com`'a bağlanabilir (CSP `connect-src`); bu ikisine de yalnızca kullanıcı Ayarlar'dan bağlantıyı açarsa istek gider. Dış betik, stil, yazı tipi, analitik ya da takip kodu yok.
 - Sunucu başlıkları (`_headers`): CSP, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy` (kamera, mikrofon, konum kapalı), HSTS.
 - Notlar kaçışlanmış metin olarak basılır; not içindeki HTML ya da betik çalışmaz.
 - Ayarlar → "Bu cihazdaki girişleri ve ayarları sil".

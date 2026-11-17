@@ -29,8 +29,8 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 /* telefon: yakınlaştırma yok, çift dokunma yakınlaştırmaz, sayfa yana kaymaz, yazı boyutu kendiliğinden büyümez */
-html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: hidden; }
-body { overflow-x: hidden; overscroll-behavior-y: contain; -webkit-user-select: none; user-select: none; }
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: clip; overscroll-behavior-y: none; }
+body { overflow-x: clip; -webkit-user-select: none; user-select: none; }
 textarea, input, .not, .not * { -webkit-user-select: text; user-select: text; }
 /* iPhone, 16px'ten küçük alanlara dokununca sayfayı büyütür: hepsi 16px */
 input, textarea, select { font-size: 16px !important; }
@@ -431,4 +431,123 @@ button:disabled { opacity: .55; cursor: default; }
   #github-alanlar, #yz-alanlar { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }
   #github-alanlar > details, #github-alanlar > .ikili, #github-alanlar > p, #yz-alanlar > p, #yz-alanlar > .ikili { grid-column: 1 / -1; }
   #github-alanlar > .ikili, #yz-alanlar > .ikili { max-width: 420px; }
+}
+
+/* ---------- TELEFON: SIKI DÜZEN (az kaydırma, çok bilgi) ---------- */
+@media (max-width: 899px) {
+  body { padding-bottom: calc(118px + env(safe-area-inset-bottom)); }
+  .ust { padding: calc(10px + env(safe-area-inset-top)) 14px 2px; }
+  main { padding: 0 12px; }
+  h1 { font-size: 1.15rem; }
+  #tarih { font-size: .8rem; }
+  .halka, .halka svg { width: 38px; height: 38px; }
+  .ikon { width: 36px; height: 36px; font-size: 1rem; }
+  h2 { margin: 14px 0 6px; font-size: .74rem; }
+  .liste { gap: 6px; }
+  .bilgi { padding: 8px 10px; margin: 8px 0; font-size: .85rem; }
+
+  /* özet kartı */
+  .ozet { padding: 10px 12px; margin-top: 8px; border-radius: 14px; }
+  .ozet-etiket { font-size: .68rem; }
+  .ozet-is { font-size: .98rem; }
+  .ozet-sinav { margin-top: 6px !important; padding: 4px 8px; font-size: .8rem; }
+
+  /* takvim şeridi yatay kayan kartlar */
+  #takvim-kutu .takvim { display: flex; gap: 6px; overflow-x: auto; background: none; box-shadow: none; scrollbar-width: none; padding-bottom: 2px; }
+  #takvim-kutu .takvim::-webkit-scrollbar { display: none; }
+  #takvim-kutu .takvim li { flex: none; width: 150px; grid-template-columns: 4px 1fr; grid-template-rows: auto auto; gap: 2px 8px; padding: 8px 10px; background: var(--kart); border-radius: 12px; box-shadow: var(--golge); border: 0; }
+  #takvim-kutu .takvim li .serit { grid-row: 1 / span 2; min-height: 0; }
+  #takvim-kutu .takvim li .saat { grid-column: 2; font-size: .74rem; }
+  #takvim-kutu .takvim li .saat br { display: none; }
+  #takvim-kutu .takvim li .saat::after { content: ""; }
+  #takvim-kutu .takvim li > div { grid-column: 2; }
+  #takvim-kutu .takvim .baslik { font-size: .84rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #takvim-kutu .takvim .yer { font-size: .72rem; }
+  .tumgun { margin-bottom: 6px; gap: 4px; }
+  .tumgun span { padding: 2px 8px; font-size: .74rem; }
+  .kategoriler { padding-top: 10px; }
+  .kat { padding: 5px 10px; font-size: .8rem; }
+  .ekle { margin-top: 8px; padding: 5px 10px; font-size: .8rem; }
+
+  /* görev kartı: tek satır, düğmeler sağda */
+  .gorev { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "ust dug" "alt dug"; column-gap: 8px; padding: 8px 8px 8px 12px; border-radius: 14px; }
+  .gorev-ust { grid-area: ust; gap: 8px; }
+  .gorev-ust .metin { font-size: .92rem; line-height: 1.3; }
+  .gorev-alt { grid-area: alt; margin: 2px 0 0 18px; }
+  .etiketler { font-size: .74rem; }
+  .karar { font-size: .7rem; padding: 1px 8px; }
+  .oncelik { font-size: .66rem; }
+  .dugmeler { grid-area: dug; margin: 0; align-self: center; gap: 4px; }
+  .dugmeler button { flex: none; width: 36px; height: 36px; min-height: 36px; padding: 0; border-radius: 10px; font-size: 1rem; display: grid; place-items: center; }
+  .dugmeler .et { display: none; }
+
+  .liste.sade li { padding: 7px 10px; font-size: .86rem; }
+  .acilir { margin-top: 12px; }
+  .acilir summary { font-size: .74rem; }
+
+  /* giriş */
+  .giris-ozet { padding: 8px 12px; margin-top: 8px; }
+  .giris-ozet small { font-size: .72rem; }
+  textarea { min-height: 76px; height: 76px; }
+  .kutucuklar { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .kutucuk { min-height: 42px; padding: 7px 8px; gap: 6px; font-size: .8rem; border-radius: 12px; }
+  .kutucuk .kare { width: 18px; height: 18px; border-radius: 6px; font-size: .7rem; }
+  .namaz { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .vakit { padding: 4px 6px 4px 10px; gap: 4px; border-radius: 12px; }
+  .vakit-ad { padding: 2px 0; font-size: .86rem; }
+  .vakit-ad small { font-size: .66rem; }
+  .sayac { gap: 2px; }
+  .sayac button { width: 30px; height: 30px; border-radius: 9px; font-size: 1rem; }
+  .sayac output { min-width: 1.6ch; font-size: .9rem; }
+  .g-namaz > p { display: none; }
+  .g-diger .satirlar { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .g-diger .ikili { display: contents; }
+  .g-diger label { font-size: .72rem; }
+  .g-diger input { padding: 8px 6px; }
+
+  /* takvim ekranı */
+  .gun-seridi { gap: 4px; margin-top: 8px; }
+  .gun { padding: 6px 0; border-radius: 12px; }
+  .gun b { font-size: .95rem; }
+  .takvim li { padding: 8px 10px; grid-template-columns: 46px 4px 1fr; gap: 8px; }
+  .yaklasan li { padding: 7px 10px; grid-template-columns: 46px 1fr; font-size: .88rem; }
+
+  /* harita, menü, kartlar */
+  .mini { height: 230px; }
+  .klasorler { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .klasor { padding: 8px 9px; border-radius: 12px; }
+  .klasor b { font-size: .82rem; }
+  .klasor span { font-size: .7rem; }
+  .notlar li button { padding: 8px 10px; }
+  .menu { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+  .menu button { grid-template-columns: 1fr; grid-template-rows: auto auto auto; padding: 10px; min-height: 0; row-gap: 2px; border-radius: 14px; }
+  .menu-ikon { grid-row: auto; width: 32px; height: 32px; border-radius: 10px; font-size: .95rem; margin-bottom: 4px; }
+  .menu button b { grid-column: 1; font-size: .9rem; }
+  .menu button span:last-child { grid-column: 1; font-size: .72rem; line-height: 1.25; }
+  .kart { padding: 9px 10px; border-radius: 12px; }
+  .kart .k-deger { font-size: 1.15rem; }
+  .kartlar { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .isi { padding: 10px; gap: 4px; }
+  .isi-satir { grid-template-columns: 46px repeat(14, minmax(0, 1fr)); gap: 2px; }
+  .ay { padding: 10px; gap: 4px; }
+  .ay i { border-radius: 6px; font-size: .64rem; }
+  .cubuklar { height: 120px; padding: 10px 10px 6px; }
+  .kaza-ozet { padding: 10px 12px; gap: 6px; }
+  .ayar-kart { padding: 12px; gap: 10px; }
+  .ayar-izgara { gap: 8px; }
+  .geri { padding: 8px 0 2px; }
+
+  /* alt çubuklar */
+  .alt { padding: 4px 6px calc(4px + env(safe-area-inset-bottom)); }
+  .alt button { padding: 4px 0; }
+  .alt .nav-ikon { font-size: 1.02rem; }
+  .alt button span:last-child { font-size: .66rem; }
+  .kaydet-cubugu { bottom: calc(52px + env(safe-area-inset-bottom)); padding: 6px 12px; }
+  .kaydet-cubugu .buyuk { padding: 9px 16px; }
+}
+.takvim .saat span { display: block; }
+.takvim .saat .s2:empty { display: none; }
+@media (max-width: 899px) {
+  #takvim-kutu .takvim .saat span { display: inline; }
+  #takvim-kutu .takvim .saat .s2:not(:empty)::before { content: " – "; }
 }

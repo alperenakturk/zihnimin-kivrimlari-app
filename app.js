@@ -266,7 +266,7 @@ function cizTakvim() {
   for (const e of p.takvim) {
     if (!e.bas) { tg.append(el("span", "", e.baslik)); continue; }
     const li = el("li");
-    const saat = el("span", "saat"); saat.append(e.bas, document.createElement("br"), e.bit || "");
+    const saat = el("span", "saat"); saat.append(el("span", "s1", e.bas), el("span", "s2", e.bit || ""));
     const serit = el("span", "serit"); serit.style.background = renk(TUR_RENK[e.tur] || "diger");
     const ic = el("div"); ic.append(el("div", "baslik", e.baslik)); if (e.yer) ic.append(el("div", "yer", e.yer));
     li.append(saat, serit, ic);
@@ -737,7 +737,7 @@ function cizTakvimEkrani() {
   const etk = (gunPlan && gunPlan.takvim) || [];
   for (const e of etk) {
     if (!e.bas) { tg.append(el("span", "", e.baslik)); continue; }
-    const li = el("li"); const saat = el("span", "saat"); saat.append(e.bas, document.createElement("br"), e.bit || "");
+    const li = el("li"); const saat = el("span", "saat"); saat.append(el("span", "s1", e.bas), el("span", "s2", e.bit || ""));
     const s = el("span", "serit"); s.style.background = renk(TUR_RENK[e.tur] || "diger");
     const ic = el("div"); ic.append(el("div", "baslik", e.baslik)); if (e.yer) ic.append(el("div", "yer", e.yer));
     li.append(saat, s, ic); ol.append(li);

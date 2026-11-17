@@ -1,5 +1,5 @@
 // Uygulama kabuğunu önbelleğe alır (çevrimdışı açılsın). GitHub API isteklerine dokunmaz.
-const SURUM = "zk-v7";
+const SURUM = "zk-v8";
 const KABUK = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest", "ornek.js", "guvenlik.js", "icon.svg", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -11,9 +11,9 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin || e.request.method !== "GET") return; // API ve dış istekler ağdan
-  // önce ağ (güncel sürüm gelsin), olmazsa önbellek
+  // önce ağ (tarayıcı önbelleğini atlayıp sunucuya sor: güncel sürüm gelsin), olmazsa önbellek
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: "no-cache" })
       .then((r) => { const kopya = r.clone(); caches.open(SURUM).then((c) => c.put(e.request, kopya)); return r; })
       .catch(() => caches.match(e.request).then((r) => r || caches.match("index.html")))
   );

@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com https://api.anthropic.com; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <meta name="theme-color" content="#f4f6fb">
+  <meta name="theme-color" content="#f4f6fb" id="tema-rengi">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Zihnimin Kıvrımları</title>
@@ -72,6 +72,7 @@
       <div class="g-karalama">
       <h2>Kafamdan geçenler</h2>
       <textarea id="karalama" rows="5" placeholder="Bugün şunu yaptım, şunu düşündüm, yarın şunu yapmalıyım…"></textarea>
+      <button type="button" id="yz-ayikla" class="yz-dugme" hidden>✨ Karalamadan iş çıkar (Claude)</button>
       </div>
       <div class="g-diger">
       <h2>Diğer</h2>
@@ -221,15 +222,100 @@
     </section>
 
     <!-- AYARLAR -->
-    <section id="ekran-ayar" class="ekran alt-ekran" aria-label="Ayarlar">
+    <section id="ekran-ayar" class="ekran alt-ekran ayarlar" aria-label="Ayarlar">
       <button class="geri" data-git="daha">‹ Daha</button>
-      <h2>Sen</h2>
-      <div class="satirlar">
-        <label>Adın (selamda görünür, yalnızca bu cihazda) <input id="ayar-ad" type="text" autocomplete="off" placeholder="Adın"></label>
+      <h1 class="ayar-baslik">Ayarlar</h1>
+      <div class="ayar-izgara">
+
+        <section class="ayar-kart">
+          <h3>👤 Profil</h3>
+          <label class="ayar-satir">Adın <small>selamda görünür</small><input id="ayar-ad" type="text" maxlength="40" autocomplete="off" placeholder="Adın"></label>
+        </section>
+
+        <section class="ayar-kart">
+          <h3>🎨 Görünüm</h3>
+          <div class="ayar-satir"><span>Tema</span>
+            <div class="parcali" id="ayar-tema" role="radiogroup" aria-label="Tema">
+              <button type="button" data-deger="acik">Açık</button><button type="button" data-deger="koyu">Koyu</button><button type="button" data-deger="oto">Otomatik</button>
+            </div>
+          </div>
+          <div class="ayar-satir"><span>Yazı boyutu</span>
+            <div class="parcali" id="ayar-boyut" role="radiogroup" aria-label="Yazı boyutu">
+              <button type="button" data-deger="kucuk">Küçük</button><button type="button" data-deger="normal">Normal</button><button type="button" data-deger="buyuk">Büyük</button>
+            </div>
+          </div>
+          <label class="ayar-satir anahtar-satir"><span>Animasyon ve titreşim</span><input id="ayar-hareket" type="checkbox" role="switch"></label>
+        </section>
+
+        <section class="ayar-kart">
+          <h3>🗓 Gün</h3>
+          <label class="ayar-satir">Gün dönümü saati <small>bu saatten önceki girişler bir önceki güne yazılır</small>
+            <select id="ayar-donum"><option value="0">00:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option></select>
+          </label>
+        </section>
+
+        <section class="ayar-kart genis">
+          <h3>🔗 Veri kaynağı</h3>
+          <div class="parcali" id="ayar-kaynak" role="radiogroup" aria-label="Veri kaynağı">
+            <button type="button" data-deger="pilot">Pilot (örnek veri)</button><button type="button" data-deger="github">GitHub kasam</button>
+          </div>
+          <p id="kaynak-aciklama" class="soluk kucuk"></p>
+          <div id="github-alanlar" class="satirlar" hidden>
+            <label>Repo <input id="gh-repo" type="text" autocomplete="off" spellcheck="false" placeholder="kullanici/repo"></label>
+            <label>Dal <input id="gh-dal" type="text" autocomplete="off" spellcheck="false" placeholder="main"></label>
+            <label>GitHub anahtarı (fine-grained token) <input id="gh-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_… (değiştirmek için yaz)"></label>
+            <details class="acilir"><summary>Anahtar nasıl alınır?</summary>
+              <ol class="kucuk">
+                <li>github.com → Settings → Developer settings → Fine-grained tokens → Generate new token.</li>
+                <li>Repository access: <b>Only select repositories</b> → yalnızca kasa reposu.</li>
+                <li>Permissions → Repository → <b>Contents: Read and write</b>. Başka izin verme.</li>
+              </ol>
+            </details>
+            <div class="ikili"><button type="button" id="gh-dene" class="ikincil">Bağlantıyı dene</button><button type="button" id="gh-kaydet" class="buyuk">Kaydet</button></div>
+            <p id="gh-durum" class="bilgi" hidden></p>
+          </div>
+        </section>
+
+        <section class="ayar-kart genis">
+          <h3>✨ Yapay zekâ (Claude)</h3>
+          <label class="ayar-satir anahtar-satir"><span>Claude özelliklerini aç</span><input id="yz-acik" type="checkbox" role="switch"></label>
+          <div id="yz-alanlar" class="satirlar" hidden>
+            <p class="soluk kucuk">Açıkken kullandığın özellikte (ör. "Karalamadan iş çıkar") ilgili metin Anthropic'e gönderilir. Başka hiçbir veri gönderilmez.</p>
+            <label>Claude API anahtarı <input id="yz-anahtar" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-… (değiştirmek için yaz)"></label>
+            <label>Model <select id="yz-model"></select></label>
+            <div class="ikili"><button type="button" id="yz-dene" class="ikincil">Bağlantıyı dene</button><button type="button" id="yz-kaydet" class="buyuk">Kaydet</button></div>
+            <p id="yz-durum" class="bilgi" hidden></p>
+            <p class="soluk kucuk">Özellikler: <b>Giriş → Karalamadan iş çıkar</b>. Anahtar platform.claude.com → API Keys'ten alınır; harcama limiti koymanı öneririm.</p>
+          </div>
+        </section>
+
+        <section class="ayar-kart">
+          <h3>🔐 Güvenlik</h3>
+          <p id="kasa-durum" class="soluk kucuk"></p>
+          <label class="ayar-satir anahtar-satir"><span>Arka planda 5 dk sonra kilitle</span><input id="ayar-otokilit" type="checkbox" role="switch"></label>
+          <div class="ikili"><button type="button" id="kasa-kilitle" class="ikincil">Şimdi kilitle</button><button type="button" id="kasa-pin" class="ikincil">PIN'i değiştir</button></div>
+          <button type="button" id="kasa-sil" class="sil">Anahtarları bu cihazdan sil</button>
+        </section>
+
+        <section class="ayar-kart">
+          <h3>💾 Veri</h3>
+          <p class="soluk kucuk">Girişlerini dosya olarak al ya da başka cihaza taşı. Anahtarlar dosyaya yazılmaz.</p>
+          <div class="ikili"><button type="button" id="veri-disa" class="ikincil">Dışa aktar</button><label class="ikincil dosya-dugme">İçe aktar<input id="veri-ice" type="file" accept="application/json,.json"></label></div>
+          <p id="veri-durum" class="bilgi" hidden></p>
+          <button id="ayar-sil" class="sil">Bu cihazdaki tüm girişleri ve ayarları sil</button>
+        </section>
+
+        <section class="ayar-kart genis">
+          <h3>ℹ️ Hakkında</h3>
+          <ul class="kucuk hakkinda">
+            <li>Sürüm <b id="surum"></b> · <span id="kaynak-rozet"></span></li>
+            <li>Sayfa yalnızca kendi dosyalarını, <code>api.github.com</code> ve <code>api.anthropic.com</code>'u kullanabilir (CSP). Takip ya da analitik kodu yok.</li>
+            <li>Anahtarlar PIN'inle şifrelenir (AES-256-GCM, PBKDF2 600.000 tur). 10 yanlış PIN'de kasa silinir.</li>
+            <li>Uygulama GitHub'da yalnızca <code>Girdiler</code> klasörüne yazabilir.</li>
+          </ul>
+          <button type="button" id="guncelle" class="ikincil">Güncellemeleri denetle</button>
+        </section>
       </div>
-      <h2>Pilot sürüm</h2>
-      <div class="bilgi iyi">Bu sürüm hiçbir hesaba ya da sunucuya bağlanmaz ve anahtar istemez. Gördüğün görevler, notlar ve sayılar uydurma örnek veridir. Kaydettiğin girişler yalnızca bu telefonda kalır.</div>
-      <button id="ayar-sil" class="sil">Bu cihazdaki girişleri ve ayarları sil</button>
     </section>
   </main>
 
@@ -257,6 +343,32 @@
       <button data-karar="geri" id="sayfa-geri">↺ Kararı geri al</button>
       <button data-karar="sil" id="sayfa-sil" class="tehlike">🗑 Bu yeni işi sil</button>
       <button data-karar="kapat" class="soluk-dugme">Vazgeç</button>
+    </div>
+  </div>
+
+  <form id="kilit" class="sayfa" role="dialog" aria-modal="true" aria-labelledby="kilit-baslik" hidden>
+    <div class="sayfa-tutamak" aria-hidden="true"></div>
+    <p id="kilit-baslik" class="sayfa-baslik">🔐 Kasayı aç</p>
+    <p id="kilit-aciklama" class="soluk kucuk"></p>
+    <div class="satirlar">
+      <label>PIN <input id="kilit-pin" type="password" inputmode="numeric" autocomplete="off" minlength="6" maxlength="64" required></label>
+      <label id="kilit-tekrar-satir" hidden>PIN (tekrar) <input id="kilit-pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="64"></label>
+    </div>
+    <p id="kilit-hata" class="hata" hidden></p>
+    <div class="ikili">
+      <button type="button" id="kilit-vazgec" class="soluk-dugme vazgec">Vazgeç</button>
+      <button type="submit" class="buyuk" id="kilit-tamam">Aç</button>
+    </div>
+  </form>
+
+  <div id="yz-sayfa" class="sayfa" role="dialog" aria-modal="true" aria-labelledby="yz-baslik" hidden>
+    <div class="sayfa-tutamak" aria-hidden="true"></div>
+    <p id="yz-baslik" class="sayfa-baslik">✨ Claude'un önerdiği işler</p>
+    <p id="yz-bilgi" class="soluk kucuk"></p>
+    <ul id="yz-oneriler" class="liste yz-liste"></ul>
+    <div class="ikili">
+      <button type="button" id="yz-vazgec" class="soluk-dugme vazgec">Vazgeç</button>
+      <button type="button" id="yz-ekle" class="buyuk">Seçilenleri ekle</button>
     </div>
   </div>
 
@@ -305,6 +417,7 @@
   </template>
 
   <script src="ornek.js"></script>
+  <script src="guvenlik.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

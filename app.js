@@ -27,7 +27,7 @@ const KLASOR_RENK = {
   "06 Haritalar": "diger", "07 Dersler": "okul", "08 Mekanlar": "saglik", "Kök": "guv",
 };
 const TUR_RENK = { ders: "okul", sinav: "guv", staj: "staj", sosyal: "geek", proje: "proje", kisisel: "hayat", teslim: "guv" };
-const GUN_DONUMU_SAAT = 5;
+const SURUM_AD = "4.0 (pilot)";
 
 const $ = (s) => document.querySelector(s);
 const durum = {
@@ -38,7 +38,8 @@ const durum = {
 
 /* ---------- yardımcılar ---------- */
 function iso(d) { const p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
-function gunHesapla() { const d = new Date(); if (d.getHours() < GUN_DONUMU_SAAT) d.setDate(d.getDate() - 1); return iso(d); }
+function gunDonumu() { const v = Number(ayarOku().donum); return Number.isInteger(v) && v >= 0 && v <= 6 ? v : 5; }
+function gunHesapla() { const d = new Date(); if (d.getHours() < gunDonumu()) d.setDate(d.getDate() - 1); return iso(d); }
 function tarihNesne(g) { const [y, m, d] = g.split("-").map(Number); return new Date(y, m - 1, d); }
 function gunEkle(g, n) { const d = tarihNesne(g); d.setDate(d.getDate() + n); return iso(d); }
 function gunFarki(a, b) { return Math.round((tarihNesne(b) - tarihNesne(a)) / 864e5); }
@@ -50,7 +51,7 @@ function kisaTarih(g) {
   return tarihNesne(g).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
 }
 function el(etiket, sinif, metin) { const e = document.createElement(etiket); if (sinif) e.className = sinif; if (metin != null) e.textContent = metin; return e; }
-function titret() { try { navigator.vibrate && navigator.vibrate(12); } catch { /* yok */ } }
+function titret() { if (ayarOku().hareket === false) return; try { navigator.vibrate && navigator.vibrate(12); } catch { /* yok */ } }
 function kategoriBul(bolum) { for (const [r, k, ad] of KATEGORI) if (r.test(bolum)) return { k, ad }; return { k: "diger", ad: "Diğer" }; }
 function renk(k) { return getComputedStyle(document.documentElement).getPropertyValue(`--k-${k}`).trim() || "#6b7385"; }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
@@ -58,12 +59,15 @@ function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 /* ---------- ayarlar ---------- */
 function ayarOku() { try { return JSON.parse(localStorage.getItem("zk-ayar") || "{}"); } catch { return {}; } }
 function ayarYaz(a) { try { localStorage.setItem("zk-ayar", JSON.stringify(a)); } catch { /* özel pencere */ } }
+function ayarGuncelle(d) { ayarYaz({ ...ayarOku(), ...d }); }
 
 /* ---------- PİLOT DEPOLAMA ----------
    Pilot sürüm hiçbir sunucuya bağlanmaz: okunan veri ornek.js'teki UYDURMA örnektir,
    kaydedilen girişler yalnızca bu cihazın tarayıcısında (localStorage) kalır. */
 const GIRDI_ON = "zk-girdi:";
+function githubModu() { return ayarOku().kaynak === "github" && Kasa.acikMi() && !!(Kasa.oku().github || {}).token; }
 async function dosyaOku(yol) {
+  if (githubModu()) return githubOku(yol);
   if (yol.startsWith(YOL.girdiKlasor + "/")) {
     let v = null; try { v = localStorage.getItem(GIRDI_ON + yol); } catch { /* özel pencere */ }
     return v == null ? null : { metin: v, sha: null };
@@ -71,7 +75,8 @@ async function dosyaOku(yol) {
   const m = ORNEK[yol];
   return m == null ? null : { metin: m, sha: null };
 }
-async function dosyaYaz(yol, metin) {
+async function dosyaYaz(yol, metin, mesaj, sha) {
+  if (githubModu()) return githubYaz(yol, metin, mesaj, sha);
   if (!yol.startsWith(YOL.girdiKlasor + "/")) throw new Error("Pilot sürüm yalnızca kendi girişlerini kaydeder.");
   try { localStorage.setItem(GIRDI_ON + yol, metin); } catch { throw new Error("Bu tarayıcı kayda izin vermiyor (özel pencere?)."); }
   return { sha: null };
@@ -332,7 +337,7 @@ function sayfaAc(t) {
   $("#sayfa").querySelector("button").focus();
 }
 function sayfaKapat() { $("#perde").hidden = true; $("#sayfa").hidden = true; durum.sayfaGorev = null; }
-$("#perde").addEventListener("click", () => { sayfaKapat(); yeniKapat(); });
+$("#perde").addEventListener("click", () => { sayfaKapat(); yeniKapat(); if (typeof yzKapat === "function") yzKapat(); if (typeof kilitKapat === "function" && !$("#kilit").hidden) kilitKapat(false); });
 for (const b of document.querySelectorAll("#sayfa button")) {
   b.addEventListener("click", () => { const t = durum.sayfaGorev; if (b.dataset.karar !== "kapat" && t) kararVer(t, b.dataset.karar); sayfaKapat(); });
 }
@@ -573,10 +578,11 @@ function miniCiz() {
   const ox = (w - (maxx - minx) * k) / 2 - minx * k, oy = (hgt - (maxy - miny) * k) / 2 - miny * k;
   const { z, px, py } = mini; // kullanıcının yakınlaştırması ve kaydırması
   for (const n of N) { n.sx = (n.x * k + ox) * z + px; n.sy = (n.y * k + oy) * z + py; n.r = (2.5 + Math.min(7, Math.sqrt(n.der) * 1.3)) * Math.min(2, Math.sqrt(z)); }
-  c.strokeStyle = "rgba(107,115,133,.18)"; c.lineWidth = 0.7; c.beginPath();
+  const css = getComputedStyle(document.documentElement); const yaziR = css.getPropertyValue("--yazi").trim() || "#1b2230"; const kartR = css.getPropertyValue("--kart").trim() || "#fff";
+  c.strokeStyle = css.getPropertyValue("--harita-cizgi").trim() || "rgba(107,115,133,.18)"; c.lineWidth = 0.7; c.beginPath();
   for (const [i, j] of K) { c.moveTo(N[i].sx, N[i].sy); c.lineTo(N[j].sx, N[j].sy); } c.stroke();
   for (const n of N) { c.fillStyle = renk(KLASOR_RENK[n.d.klasor] || "diger"); c.beginPath(); c.arc(n.sx, n.sy, n.r, 0, Math.PI * 2); c.fill(); }
-  c.fillStyle = "#1b2230"; c.font = "600 10px system-ui, sans-serif"; c.textAlign = "center";
+  c.fillStyle = yaziR; c.font = "600 10px system-ui, sans-serif"; c.textAlign = "center";
   // en çok bağlantılı notların adı; birbirinin üstüne binenler atlanır
   const kutular = [];
   for (const n of [...N].sort((a, b) => b.der - a.der).slice(0, 14 + Math.round(z * 10))) {
@@ -585,8 +591,8 @@ function miniCiz() {
     if (k.x < 0 || k.x + k.w > w || k.y < 0) continue;
     if (kutular.some((o) => k.x < o.x + o.w && o.x < k.x + k.w && k.y < o.y + o.h && o.y < k.y + k.h)) continue;
     kutular.push(k);
-    c.fillStyle = "rgba(255,255,255,.85)"; c.fillRect(k.x, k.y, k.w, k.h);
-    c.fillStyle = "#1b2230"; c.fillText(ad, n.sx, n.sy - n.r - 5);
+    c.globalAlpha = 0.85; c.fillStyle = kartR; c.fillRect(k.x, k.y, k.w, k.h); c.globalAlpha = 1;
+    c.fillStyle = yaziR; c.fillText(ad, n.sx, n.sy - n.r - 5);
     if (kutular.length >= Math.round(6 * z)) break;
   }
 }
@@ -911,10 +917,19 @@ async function rehberYukle() {
 }
 
 /* ---------- yükleme ve gezinme ---------- */
-function bilgi(m, tur) { const b = $("#durum"); b.hidden = !m; b.textContent = m || ""; b.className = "bilgi" + (tur ? " " + tur : ""); }
+let bilgiZaman = 0;
+function bilgi(m, tur) {
+  const b = $("#durum"); b.hidden = !m; b.textContent = m || ""; b.className = "bilgi" + (tur ? " " + tur : "");
+  clearTimeout(bilgiZaman); if (m && tur === "iyi") bilgiZaman = setTimeout(() => { b.hidden = true; }, 4000);
+}
 function taslakAl(gun) { try { const t = JSON.parse(localStorage.getItem("zk-taslak") || "null"); return t && t.gun === gun ? t : null; } catch { return null; } }
 async function yukle() {
   bilgi("");
+  if (ayarOku().kaynak === "github" && !Kasa.acikMi()) {
+    if (Kasa.varMi()) { const tamam = await kilitAc("Kasandaki verine bağlanmak için PIN'ini gir."); if (!tamam) bilgi("Kasa kilitli: örnek veri gösteriliyor. Kasayı açmak için ↻.", ""); }
+    else bilgi("GitHub kaynağı seçili ama anahtar yok: örnek veri gösteriliyor (Ayarlar → Veri kaynağı).");
+  }
+  durum.alisSatir = null; durum.arsiv = null;
   try {
     const [g, h, p, gi] = await Promise.all([dosyaOku(YOL.gorevler), dosyaOku(YOL.hafta), dosyaOku(YOL.bugun), dosyaOku(`${YOL.girdiKlasor}/${durum.gun}.md`)]);
     durum.anaGorevler = g ? gorevleriAyristir(g.metin) : [];
@@ -951,21 +966,239 @@ for (const b of document.querySelectorAll(".alt button")) b.addEventListener("cl
 for (const b of document.querySelectorAll("[data-git]")) b.addEventListener("click", () => ekranAc(b.dataset.git));
 $("#ayar-ac").addEventListener("click", () => ekranAc(durum.ekran === "ayar" ? "bugun" : "ayar"));
 
+/* ---------- AYARLAR ---------- */
+function temaUygula() {
+  const a = ayarOku(); const kok = document.documentElement;
+  kok.dataset.tema = a.tema || "acik"; kok.dataset.boyut = a.boyut || "normal"; kok.dataset.hareket = a.hareket === false ? "kapali" : "acik";
+  const koyu = kok.dataset.tema === "koyu" || (kok.dataset.tema === "oto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  $("#tema-rengi").content = koyu ? "#121318" : "#f4f6fb";
+  if (mini) miniCiz();
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", temaUygula);
+function parcaliBagla(sec, anahtar, varsayilan, sonra) {
+  const kap = $(sec);
+  const ciz = () => { const v = ayarOku()[anahtar] || varsayilan; for (const b of kap.querySelectorAll("button")) { const s = b.dataset.deger === v; b.classList.toggle("secili", s); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(s)); } };
+  for (const b of kap.querySelectorAll("button")) b.addEventListener("click", () => { ayarGuncelle({ [anahtar]: b.dataset.deger }); ciz(); titret(); sonra && sonra(); });
+  ciz(); return ciz;
+}
+function durumYaz(sec, m, tur) { const e = $(sec); e.hidden = !m; e.textContent = m || ""; e.className = "bilgi" + (tur ? " " + tur : ""); }
+function kasaDurumCiz() {
+  const a = ayarOku(); const k = Kasa.oku();
+  $("#kasa-durum").textContent = !Kasa.varMi() ? "Kayıtlı anahtar yok." : Kasa.acikMi()
+    ? `Kasa açık · ${[k.github && k.github.token ? "GitHub" : "", k.yz && k.yz.anahtar ? "Claude" : ""].filter(Boolean).join(" + ") || "boş"}` : "Kasa kilitli 🔒";
+  $("#github-alanlar").hidden = a.kaynak !== "github";
+  $("#kaynak-aciklama").textContent = a.kaynak === "github"
+    ? "Gerçek kasan okunur; girişler GitHub'daki Girdiler klasörüne yazılır. Anahtar PIN'inle şifrelenir."
+    : "Hiçbir yere bağlanmaz. Görevler ve notlar uydurma örnektir; girişler yalnızca bu cihazda kalır.";
+  $("#kaynak-rozet").textContent = githubModu() ? "GitHub kasasına bağlı" : "pilot (örnek veri)";
+  if (k && k.github) { $("#gh-repo").value = k.github.repo || ""; $("#gh-dal").value = k.github.dal || "main"; }
+  $("#gh-token").placeholder = k && k.github && k.github.token ? "•••• kayıtlı (değiştirmek için yaz)" : "github_pat_…";
+  $("#yz-acik").checked = !!a.yzAcik; $("#yz-alanlar").hidden = !a.yzAcik; $("#yz-ayikla").hidden = !a.yzAcik;
+  $("#yz-anahtar").placeholder = k && k.yz && k.yz.anahtar ? "•••• kayıtlı (değiştirmek için yaz)" : "sk-ant-…";
+  $("#yz-model").value = a.yzModel || "claude-opus-5-5";
+}
+/* Kasaya bir şey yazmak: kasa yoksa PIN belirlenir, kilitliyse açılır */
+async function kasayaYaz(degisiklik) {
+  if (!Kasa.varMi()) { const ok = await kilitAc(null, true, degisiklik); return ok; }
+  if (!Kasa.acikMi() && !(await kilitAc("Değişikliği kaydetmek için PIN'ini gir."))) return false;
+  await Kasa.guncelle(degisiklik); return true;
+}
+let kilitCoz = null;
+function kilitAc(aciklama, yeniPin = false, ilkVeri = null) {
+  return new Promise((coz) => {
+    kilitCoz = coz; const f = $("#kilit");
+    $("#kilit-baslik").textContent = yeniPin ? "🔐 PIN belirle" : "🔐 Kasayı aç";
+    $("#kilit-aciklama").textContent = yeniPin ? "Anahtarların bu PIN ile şifrelenecek. En az 6 karakter; unutursan anahtarları yeniden girmen gerekir." : (aciklama || "");
+    $("#kilit-tekrar-satir").hidden = !yeniPin; $("#kilit-tamam").textContent = yeniPin ? "Şifrele ve kaydet" : "Aç";
+    $("#kilit-pin").value = ""; $("#kilit-pin2").value = ""; $("#kilit-hata").hidden = true;
+    f.dataset.yeni = yeniPin ? "1" : ""; f._ilk = ilkVeri;
+    $("#perde").hidden = false; f.hidden = false; setTimeout(() => $("#kilit-pin").focus(), 50);
+  });
+}
+function kilitKapat(sonuc) { $("#kilit").hidden = true; if ($("#sayfa").hidden && $("#yeni").hidden && $("#yz-sayfa").hidden) $("#perde").hidden = true; if (kilitCoz) { const c = kilitCoz; kilitCoz = null; c(sonuc); } }
+$("#kilit-vazgec").addEventListener("click", () => kilitKapat(false));
+$("#kilit").addEventListener("submit", async (e) => {
+  e.preventDefault(); const f = $("#kilit"); const pin = $("#kilit-pin").value; const hata = $("#kilit-hata");
+  const goster = (m) => { hata.textContent = m; hata.hidden = false; };
+  $("#kilit-tamam").disabled = true;
+  try {
+    if (f.dataset.yeni) {
+      if (!Kasa.pinUygun(pin)) return goster("PIN en az 6 karakter olmalı.");
+      if (pin !== $("#kilit-pin2").value) return goster("İki PIN aynı değil.");
+      await Kasa.kur(pin, f._ilk || {});
+    } else await Kasa.ac(pin);
+    kilitKapat(true); kasaDurumCiz();
+  } catch (err) { goster(err.message); kasaDurumCiz(); }
+  finally { $("#kilit-tamam").disabled = false; $("#kilit-pin").value = ""; $("#kilit-pin2").value = ""; }
+});
+
 (function ayarEkrani() {
   const a = ayarOku();
+  $("#surum").textContent = SURUM_AD;
   $("#ayar-ad").value = a.ad || "";
-  $("#ayar-ad").addEventListener("change", (e) => { ayarYaz({ ad: e.target.value.trim().slice(0, 40) }); cizBugun(); });
+  $("#ayar-ad").addEventListener("change", (e) => { ayarGuncelle({ ad: e.target.value.trim().slice(0, 40) }); cizBugun(); });
+  parcaliBagla("#ayar-tema", "tema", "acik", temaUygula);
+  parcaliBagla("#ayar-boyut", "boyut", "normal", temaUygula);
+  $("#ayar-hareket").checked = a.hareket !== false;
+  $("#ayar-hareket").addEventListener("change", (e) => { ayarGuncelle({ hareket: e.target.checked }); temaUygula(); });
+  $("#ayar-donum").value = String(gunDonumu());
+  $("#ayar-donum").addEventListener("change", (e) => { ayarGuncelle({ donum: Number(e.target.value) }); if (!durum.degisti) { durum.gun = gunHesapla(); yukle(); } });
+  parcaliBagla("#ayar-kaynak", "kaynak", "pilot", () => { kasaDurumCiz(); if (!durum.degisti) yukle(); });
+  // GitHub
+  const ghAlanlari = () => {
+    const repo = $("#gh-repo").value.trim(); const dal = $("#gh-dal").value.trim() || "main"; const token = $("#gh-token").value.trim();
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) throw new Error("Repo 'kullanici/repo' biçiminde olmalı.");
+    if (token && !/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(token)) throw new Error("Bu bir GitHub anahtarına benzemiyor.");
+    const eski = (Kasa.oku() || {}).github || {};
+    if (!token && !eski.token) throw new Error("Anahtarı yaz.");
+    return { repo, dal, token: token || eski.token };
+  };
+  $("#gh-kaydet").addEventListener("click", async () => {
+    try { const g = ghAlanlari(); if (await kasayaYaz({ github: g })) { $("#gh-token").value = ""; durumYaz("#gh-durum", "Kaydedildi ve şifrelendi ✓", "iyi"); kasaDurumCiz(); if (!durum.degisti) yukle(); } }
+    catch (e) { durumYaz("#gh-durum", "⚠️ " + e.message, "kotu"); }
+  });
+  $("#gh-dene").addEventListener("click", async () => {
+    durumYaz("#gh-durum", "Deneniyor…");
+    try {
+      const g = ghAlanlari(); const r = await fetch(`https://api.github.com/repos/${g.repo}`, { headers: { Authorization: `Bearer ${g.token}`, Accept: "application/vnd.github+json" }, referrerPolicy: "no-referrer", credentials: "omit", cache: "no-store" });
+      if (r.status === 401) throw new Error("Anahtar geçersiz.");
+      if (r.status === 403 || r.status === 404) throw new Error("Bu repoya erişim yok (anahtarın izinlerini kontrol et).");
+      if (!r.ok) throw new Error(`GitHub hatası ${r.status}`);
+      const j = await r.json(); durumYaz("#gh-durum", `Bağlandı ✓ · ${j.private ? "gizli" : "herkese açık"} repo${j.private ? "" : " — kasa reposunun gizli olması gerekir!"}`, j.private ? "iyi" : "kotu");
+    } catch (e) { durumYaz("#gh-durum", "⚠️ " + e.message, "kotu"); }
+  });
+  // YZ
+  for (const [id, ad] of YZ_MODELLER) { const o = document.createElement("option"); o.value = id; o.textContent = ad; $("#yz-model").append(o); }
+  $("#yz-acik").addEventListener("change", (e) => { ayarGuncelle({ yzAcik: e.target.checked }); kasaDurumCiz(); });
+  $("#yz-model").addEventListener("change", (e) => ayarGuncelle({ yzModel: e.target.value }));
+  $("#yz-kaydet").addEventListener("click", async () => {
+    const anahtar = $("#yz-anahtar").value.trim(); const eski = ((Kasa.oku() || {}).yz || {}).anahtar;
+    try {
+      if (anahtar && !/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(anahtar)) throw new Error("Bu bir Claude API anahtarına benzemiyor.");
+      if (!anahtar && !eski) throw new Error("Anahtarı yaz.");
+      if (await kasayaYaz({ yz: { anahtar: anahtar || eski } })) { $("#yz-anahtar").value = ""; durumYaz("#yz-durum", "Kaydedildi ve şifrelendi ✓", "iyi"); kasaDurumCiz(); }
+    } catch (e) { durumYaz("#yz-durum", "⚠️ " + e.message, "kotu"); }
+  });
+  $("#yz-dene").addEventListener("click", async () => {
+    if (!Kasa.acikMi() && Kasa.varMi() && !(await kilitAc("Denemek için PIN'ini gir."))) return;
+    durumYaz("#yz-durum", "Claude'a soruluyor…");
+    try {
+      const r = await yzIste({ model: ayarOku().yzModel, sistem: "Sadece istenen JSON'u döndür.", mesaj: "Bağlantı testi. tamam alanını true yap.", maxTokens: 2000,
+        sema: { type: "object", properties: { tamam: { type: "boolean" } }, required: ["tamam"], additionalProperties: false } });
+      durumYaz("#yz-durum", r.tamam ? "Claude bağlı ✓" : "Yanıt geldi ama beklenen değil.", r.tamam ? "iyi" : "kotu");
+    } catch (e) { durumYaz("#yz-durum", "⚠️ " + e.message, "kotu"); }
+  });
+  // Güvenlik
+  $("#ayar-otokilit").checked = a.otoKilit !== false;
+  $("#ayar-otokilit").addEventListener("change", (e) => ayarGuncelle({ otoKilit: e.target.checked }));
+  $("#kasa-kilitle").addEventListener("click", () => { Kasa.kilitle(); kasaDurumCiz(); titret(); if (ayarOku().kaynak === "github" && !durum.degisti) yukle(); });
+  $("#kasa-pin").addEventListener("click", async () => {
+    if (!Kasa.varMi()) return alert("Önce bir anahtar kaydet.");
+    if (!Kasa.acikMi() && !(await kilitAc("Önce mevcut PIN'ini gir."))) return;
+    const veri = Kasa.oku(); await kilitAc(null, true, veri); kasaDurumCiz();
+  });
+  $("#kasa-sil").addEventListener("click", () => {
+    if (!confirm("GitHub ve Claude anahtarları bu cihazdan silinsin mi? (Hesaplarındaki anahtarlar silinmez; gerekirse onları ayrıca iptal et.)")) return;
+    Kasa.sil(); ayarGuncelle({ kaynak: "pilot" }); kasaDurumCiz(); if (!durum.degisti) yukle();
+  });
+  // Veri
+  $("#veri-disa").addEventListener("click", () => {
+    const girdiler = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(GIRDI_ON)) girdiler[k.slice(GIRDI_ON.length)] = localStorage.getItem(k); }
+    const { ad, tema, boyut, hareket, donum, yzModel } = ayarOku();
+    const blob = new Blob([JSON.stringify({ uygulama: "zihnimin-kivrimlari", surum: 1, tarih: new Date().toISOString(), ayar: { ad, tema, boyut, hareket, donum, yzModel }, girdiler }, null, 2)], { type: "application/json" });
+    const u = URL.createObjectURL(blob); const l = document.createElement("a"); l.href = u; l.download = `kivrimlar-yedek-${durum.gun}.json`; document.body.append(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 1000);
+    durumYaz("#veri-durum", `${Object.keys(girdiler).length} günlük giriş dışa aktarıldı.`, "iyi");
+  });
+  $("#veri-ice").addEventListener("change", async (e) => {
+    const dosya = e.target.files[0]; e.target.value = ""; if (!dosya) return;
+    try {
+      if (dosya.size > 2e6) throw new Error("Dosya çok büyük.");
+      const j = JSON.parse(await dosya.text());
+      if (j.uygulama !== "zihnimin-kivrimlari" || typeof j.girdiler !== "object") throw new Error("Bu bir Kıvrımlar yedeği değil.");
+      let n = 0;
+      for (const [yol, metin] of Object.entries(j.girdiler)) {
+        if (!/^05 Günlük Sistem\/Girdiler\/\d{4}-\d{2}-\d{2}\.md$/.test(yol) || typeof metin !== "string" || metin.length > 200000) continue;
+        localStorage.setItem(GIRDI_ON + yol, metin); n++;
+      }
+      const iz = ["ad", "tema", "boyut", "hareket", "donum", "yzModel"]; const yeni = {};
+      for (const k of iz) if (j.ayar && j.ayar[k] !== undefined) yeni[k] = j.ayar[k];
+      ayarGuncelle(yeni); temaUygula(); durumYaz("#veri-durum", `${n} günlük giriş içe aktarıldı ✓`, "iyi"); if (!durum.degisti) yukle();
+    } catch (err) { durumYaz("#veri-durum", "⚠️ " + err.message, "kotu"); }
+  });
   $("#ayar-sil").addEventListener("click", async () => {
-    if (!confirm("Bu cihazdaki tüm girişler ve ayarlar silinsin mi?")) return;
+    if (!confirm("Bu cihazdaki tüm girişler, ayarlar ve anahtarlar silinsin mi? Geri alınamaz.")) return;
     try { localStorage.clear(); } catch { /* yok */ }
     try { for (const k of await caches.keys()) await caches.delete(k); } catch { /* yok */ }
     location.reload();
   });
+  $("#guncelle").addEventListener("click", async () => {
+    try { const r = await navigator.serviceWorker.getRegistration(); if (r) await r.update(); } catch { /* yok */ }
+    location.reload();
+  });
+  temaUygula(); kasaDurumCiz();
 })();
 
+/* ---------- YZ: karalamadan iş çıkar ---------- */
+$("#yz-ayikla").addEventListener("click", async () => {
+  const metin = durum.girdi.karalama.trim(); const b = $("#yz-ayikla");
+  if (metin.length < 10) return alert("Önce 'Kafamdan geçenler' kutusuna biraz yaz.");
+  if (!ayarOku().yzOnay && !confirm("Karalama metnin işlenmek üzere Anthropic'e (Claude) gönderilecek. Devam edilsin mi?")) return;
+  ayarGuncelle({ yzOnay: true });
+  if (!Kasa.acikMi() && Kasa.varMi() && !(await kilitAc("Claude'u kullanmak için PIN'ini gir."))) return;
+  b.disabled = true; const eski = b.textContent; b.textContent = "✨ Claude düşünüyor…";
+  try {
+    const kat = YENI_KAT.map((k) => k[0]);
+    const r = await yzIste({
+      model: ayarOku().yzModel,
+      sistem: `Kullanıcının günlük notundan yapılacak işleri çıkaran bir asistansın. Bugün ${durum.gun} (${gunYazi(durum.gun)}). Yalnızca gerçekten yapılması gereken somut işleri çıkar; zaten yapılmış olanları alma. Her iş kısa, eylemle başlayan Türkçe bir cümle olsun. Tarih belirtilmişse YYYY-AA-GG biçiminde gun alanına yaz, belirtilmemişse boş bırak. Kategori: ${kat.join(", ")}.`,
+      mesaj: metin,
+      sema: {
+        type: "object", additionalProperties: false, required: ["isler"],
+        properties: { isler: { type: "array", items: {
+          type: "object", additionalProperties: false, required: ["ad", "kat", "onem", "gun"],
+          properties: { ad: { type: "string" }, kat: { type: "string", enum: kat }, onem: { type: "string", enum: ["yuksek", "orta", "dusuk"] }, gun: { type: "string" } },
+        } } },
+      },
+    });
+    yzOnerileriGoster((r.isler || []).slice(0, 15));
+  } catch (e) { alert("⚠️ " + e.message); }
+  finally { b.disabled = false; b.textContent = eski; }
+});
+let yzOneriler = [];
+function yzOnerileriGoster(liste) {
+  const ONEM = { yuksek: "⏫", orta: "🔼", dusuk: "🔽" };
+  yzOneriler = liste.map((x) => ({
+    ad: String(x.ad || "").replace(/[⏫🔼🔽⏳📅✅#|]/gu, "").replace(/\s+/g, " ").trim().slice(0, 140),
+    kat: YENI_KAT.some((k) => k[0] === x.kat) ? x.kat : "hayat", oncelik: ONEM[x.onem] || "🔼",
+    gun: /^\d{4}-\d{2}-\d{2}$/.test(x.gun || "") && x.gun >= durum.gun ? x.gun : durum.gun, son: null, sec: true,
+  })).filter((x) => x.ad.length >= 3 && !durum.gorevler.some((t) => t.ad.toLocaleLowerCase("tr") === x.ad.toLocaleLowerCase("tr")));
+  const ul = $("#yz-oneriler"); ul.replaceChildren();
+  $("#yz-bilgi").textContent = yzOneriler.length ? "Eklemek istemediklerinin işaretini kaldır." : "Karalamada yeni bir iş bulunamadı.";
+  yzOneriler.forEach((o, i) => {
+    const li = el("li"); const lb = el("label", "yz-oneri"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = true;
+    cb.addEventListener("change", () => (yzOneriler[i].sec = cb.checked));
+    const n = el("span", "kat-nokta"); n.style.background = renk(o.kat);
+    const ic = el("span"); ic.append(el("b", "", o.ad), el("small", "", `${YENI_KAT.find((k) => k[0] === o.kat)[1]} · ${kisaTarih(o.gun)} · ${o.oncelik}`));
+    lb.append(cb, n, ic); li.append(lb); ul.append(li);
+  });
+  $("#yz-ekle").hidden = !yzOneriler.length;
+  $("#perde").hidden = false; $("#yz-sayfa").hidden = false;
+}
+function yzKapat() { $("#yz-sayfa").hidden = true; if ($("#sayfa").hidden && $("#yeni").hidden && $("#kilit").hidden) $("#perde").hidden = true; }
+$("#yz-vazgec").addEventListener("click", yzKapat);
+$("#yz-ekle").addEventListener("click", () => {
+  const sec = yzOneriler.filter((o) => o.sec); if (!sec.length) return yzKapat();
+  durum.girdi.yeni_gorevler = durum.girdi.yeni_gorevler || [];
+  for (const o of sec) durum.girdi.yeni_gorevler.push({ ad: o.ad, kat: o.kat, oncelik: o.oncelik, gun: o.gun, son: null });
+  gorevleriBirlestir(); titret(); degisti(); yzKapat(); ekraniYenile(); bilgi(`${sec.length} iş eklendi ✓ (Kaydet'e basmayı unutma)`, "iyi");
+});
+
 window.addEventListener("beforeunload", (e) => { if (durum.degisti) { e.preventDefault(); e.returnValue = ""; } });
+let gizlendi = 0;
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible" || durum.degisti) return;
+  if (document.visibilityState === "hidden") { gizlendi = Date.now(); return; }
+  if (gizlendi && Date.now() - gizlendi > 5 * 60000 && ayarOku().otoKilit !== false && Kasa.acikMi()) { Kasa.kilitle(); kasaDurumCiz(); if (ayarOku().kaynak === "github" && !durum.degisti) { yukle(); return; } }
+  if (durum.degisti) return;
   const g = gunHesapla(); if (g !== durum.gun) { durum.gun = g; yukle(); } else if (durum.ekran === "bugun") cizTakvim();
 });
 // iPhone Safari "user-scalable=no"yu yok sayar: iki parmakla büyütmeyi burada engelle
